@@ -1,11 +1,5 @@
 
-
-class FieldData:
-    def __init__(self):
-        self.table = []
-        self.name_space = ''
-        self.ore_types = []
-        self.data = {
+struct = {
             'table': [],
             'name_space': '',
             'horizont_size': 0,
@@ -13,4 +7,12 @@ class FieldData:
             'ore_types': []
         }
 
+class Data:
+    def __init__(self):
+        self.table = []
+        self.name_space = ''
+        self.ore_types = []
+        self.data = None
+
     def get(self):
+        pass

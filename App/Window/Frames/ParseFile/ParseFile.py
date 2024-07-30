@@ -20,9 +20,9 @@ class ParseFile(tk.Frame):
         self.load_file_button = tk.Button(self, text='Загрузить файл', command=(self._load_file_command))
         self.save_file_button = tk.Button(self, text='Сохранить файл', command=(self._save_file_command))
         self.progressbar = ttk.Progressbar(self, orient='horizontal', length=1000, value=1000)
-        self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=10)
+        self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=20)
         for i in range(len(COLUMNS)):
-            self.table.heading(COLUMNS[i], text=COLUMNS[i][0])
+            self.table.heading(i, text=COLUMNS[i][0])
             self.table.column(i, width=COLUMNS[i][1], minwidth=COLUMNS[i][1])
         self.size_of_horizont_label = tk.Label(self, text='Размер горизонта', justify=tk.CENTER)
         self.size_of_horizont_entry = tk.Entry(self, justify=tk.CENTER, state=tk.DISABLED)
