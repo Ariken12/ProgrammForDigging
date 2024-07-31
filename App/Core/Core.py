@@ -1,6 +1,27 @@
 from Core.Data import Data
+from Core.Compute import Compute
+from Core.Parser import Parser
+
 
 class Core:
     def __init__(self):
         self.data = Data()
-        
+        self.compute = Compute(self)
+        self.parser = Parser(self)
+
+    def clean(self):
+        self.data = Data()
+        self.compute = Compute(self)
+        self.parser = Parser(self)
+
+    def set(self, *data, **kwdata):
+        self.data.set(*data, **kwdata)
+
+    def data_get_meta(self):
+        return self.data.get_meta()
+    
+    def __getitem__(self, item):
+        return self.data[item]
+    
+    def recalculate(self):
+        self.compute.calculate_places()

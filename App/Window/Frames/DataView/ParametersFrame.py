@@ -21,6 +21,7 @@ class ParametersFrame(ttk.Labelframe):
         for i, label in enumerate(self.label_variants):
             label.grid(column=1, row=1+i, sticky=tk.NSEW)
         for i, label in enumerate(self.label_headers):
+            self.columnconfigure(2+i, weight=1)
             label.grid(column=2+i, row=1, sticky=tk.NSEW)
         for i, radiobuttons in enumerate(self.radiobuttons):
             for j, radiobutton in enumerate(radiobuttons):

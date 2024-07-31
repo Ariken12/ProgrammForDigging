@@ -1,11 +1,10 @@
 
 TABLE_HEIGHT = 20
 
-PARAMETERS_1 = ('Руда', 'Вскрыша', 'Полезная руда')
+PARAMETERS_1 = ('Тип массы', 'Вскрыша', 'Полезная руда')
 PARAMETERS_2 = ('Компонент', 'В (%)', 'В (г/т)')
 
 COMPONENTS = (
-    'Sg',
     'AU',
     'AG',
     'Cu',
@@ -18,19 +17,14 @@ COMPONENTS = (
     'S'
 )
 
-CALENDAR_COLUMNS = (
-    ('Год', 80),
-)
+CALENDAR_HEADER = 'Дата'
 
-CAREER_COLUMNS = (
-    ('Участок', 150),
-)
+PLACE_HEADER = 'Участок'
 
 CARREER_HORIZONTS = (
     ('Горизонт', 80),
     ('Тип руды', 80),
     ('Обьем', 80),
-    ('Sg', 40),
     ('AU', 40),
     ('AG', 40),
     ('Cu', 40),

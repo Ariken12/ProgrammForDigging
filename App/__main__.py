@@ -5,7 +5,7 @@ import Core as c
 
 def main():
     core = c.Core()
-    root = mw.MainWindow()
+    root = mw.MainWindow(core)
     root.mainloop()
 
 

@@ -11,15 +11,16 @@ from Window.Frames.ParseFile.Constants import *
 
 
 class ParseFile(tk.Frame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, core, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.core = core
         self.name_space_label = tk.Label(self, text='Название месторождения*', justify=tk.CENTER)
         self.name_space_entry = tk.Entry(self, justify=tk.CENTER, font='bold')
         self.open_file_button = tk.Button(self, text='Выбрать файл', command=(self._open_file_command))
         self.open_file_entry = tk.Entry(self, width=120)
         self.load_file_button = tk.Button(self, text='Загрузить файл', command=(self._load_file_command))
         self.save_file_button = tk.Button(self, text='Сохранить файл', command=(self._save_file_command))
-        self.progressbar = ttk.Progressbar(self, orient='horizontal', length=1000, value=1000)
+        self.progressbar = ttk.Progressbar(self, orient='horizontal', length=100, value=100)
         self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=20)
         for i in range(len(COLUMNS)):
             self.table.heading(i, text=COLUMNS[i][0])
@@ -41,12 +42,15 @@ class ParseFile(tk.Frame):
             'name_space': '',
             'horizont_size': 0,
             'max_horizont': 0,
-            'ore_types': []
+            'ore_types': [],
+            'places': []
         }
         self.ore_types = []
         self._pack()
     
     def _pack(self):
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(1, weight=1)
         self.name_space_label.grid(         column=1, row=0, columnspan=5, sticky=tk.NSEW)
         self.name_space_entry.grid(         column=1, row=1, columnspan=5, sticky=tk.NSEW)
         self.open_file_button.grid(         column=1, row=2, sticky=tk.NSEW)
@@ -92,11 +96,15 @@ class ParseFile(tk.Frame):
             self.data['table'].append([])
             for column in range(1, worksheet.max_column+1):
                 cell = worksheet.cell(row, column).value
-                if type(cell) in (int, float):
-                    array.append(round(cell, -self.precision))
-                else:
-                    array.append(cell)
+                # if type(cell) in (int, float):
+                #     array.append(round(cell, -self.precision))
+                # else:
+                #     array.append(cell)
+                array.append(cell)
                 self.data['table'][row-2].append(cell)
+            nameplace = array[0]
+            if nameplace not in self.data['places']:
+                self.data['places'].append(nameplace)
             namespace = '_'.join(array[0].split('_')[:-1])
             if namespace not in self.data['name_space'].split(' | '):
                 if len(self.data['name_space']) < 1:
@@ -122,7 +130,7 @@ class ParseFile(tk.Frame):
                 self.data['ore_types'].append(ore_type)
             self.__update_states()
             self.table.insert("", row-2, values=array)
-            self.progressbar['value'] = int(row * 1000 / (worksheet.max_row-1))
+            self.progressbar['value'] = int(row * 100 / (worksheet.max_row-1))
             self.update()
 
     def __update_states(self):
@@ -145,7 +153,12 @@ class ParseFile(tk.Frame):
         pass
 
     def _start_(self):
-        pass
+        self.core.clean()
+        self.core.set(table=self.data['table'], 
+                              name_space=self.data['name_space'],
+                              ore_types=self.data['ore_types'],
+                              places=self.data['places'])
+        self.master._start_calculation()
 
     def _recalculate_command(self):
         self._fill_table()
