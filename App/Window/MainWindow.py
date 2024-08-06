@@ -17,8 +17,8 @@ class MainWindow(tk.Tk):
         # self.data_view.pack(expand=1, fill=tk.BOTH)
         self.parse_frame.pack(expand=1, fill=tk.BOTH)
         self.parse_frame.open_file_entry.insert(0, './resources/input1.xlsx')
-        self.parse_frame._load_file_command()
-        self.parse_frame._start_()
+        # self.parse_frame._load_file_command()
+        # self.parse_frame._start_()
         self.update()
 
     def _start_calculation(self):
