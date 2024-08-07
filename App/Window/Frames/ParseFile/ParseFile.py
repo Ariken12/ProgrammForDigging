@@ -9,6 +9,27 @@ import re
 
 from Window.Frames.ParseFile.Constants import *
 
+TABLE_HEIGHT = 10
+
+FORMAT_FUNCS = {
+    0: lambda x: x,
+    1: lambda x: x,
+    2: lambda x: x,
+    3: lambda x: x,
+    4: lambda x: f'{x:.0f}',
+    5: lambda x: f'{x:.0f}',
+    6: lambda x: f'{x:.3g}',
+    7: lambda x: f'{x:.3g}',
+    8: lambda x: f'{x:.3g}',
+    9: lambda x: f'{x:.3g}',
+    10: lambda x: f'{x:.3g}',
+    11: lambda x: f'{x:.3g}',
+    12: lambda x: f'{x:.3g}',
+    13: lambda x: f'{x:.3g}',
+    14: lambda x: f'{x:.3g}',
+    15: lambda x: f'{x:.3g}',
+    16: lambda x: f'{x:.3g}'
+}
 
 class ParseFile(tk.Frame):
     def __init__(self, core, *args, **kwargs):
@@ -21,21 +42,19 @@ class ParseFile(tk.Frame):
         self.load_file_button = tk.Button(self, text='Загрузить файл', command=(self._load_file_command))
         self.save_file_button = tk.Button(self, text='Сохранить файл', command=(self._save_file_command))
         self.progressbar = ttk.Progressbar(self, orient='horizontal', length=100, value=100)
-        self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=20)
-        for i in range(len(COLUMNS)):
-            self.table.heading(i, text=COLUMNS[i][0])
-            self.table.column(i, width=COLUMNS[i][1], minwidth=COLUMNS[i][1])
+        self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
+        self.__init_treeview()
         self.size_of_horizont_label = tk.Label(self, text='Размер горизонта', justify=tk.CENTER)
         self.size_of_horizont_entry = tk.Entry(self, justify=tk.CENTER, state=tk.DISABLED)
         self.max_of_horizont_label = tk.Label(self, text='Максимальная высота горизонта', justify=tk.CENTER)
         self.max_of_horizont_entry = tk.Entry(self, justify=tk.CENTER, state=tk.DISABLED)
         self.ore_types_label = tk.Label(self, text='Типы пород')
-        self.ore_types_text = tk.Text(self, width=10, wrap=tk.WORD, state=tk.DISABLED)
+        self.ore_types_text = tk.Text(self, width=10, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.load_data_button = tk.Button(self, text='Начать работу с данными', command=(self._start_))
-        self.precision = -2
-        self.precision_var = tk.IntVar(value=self.precision)
-        self.precision_scroll = tk.Scale(self, orient=tk.HORIZONTAL, from_=6, to=-10, variable=self.precision_var, command=self._change_precision)
-        self.precision_label = tk.Label(self, text='0.01')
+        # self.precision = -2
+        # self.precision_var = tk.IntVar(value=self.precision)
+        # self.precision_scroll = tk.Scale(self, orient=tk.HORIZONTAL, from_=6, to=-10, variable=self.precision_var, command=self._change_precision)
+        # self.precision_label = tk.Label(self, text='0.01')
         self.recalculate_button = tk.Button(self, text='Отобразить точность', command=(self._recalculate_command))
         self.data = {
             'table': [],
@@ -50,7 +69,7 @@ class ParseFile(tk.Frame):
     
     def _pack(self):
         self.columnconfigure(1, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.rowconfigure(6, weight=1)
         self.name_space_label.grid(         column=1, row=0, columnspan=5, sticky=tk.NSEW)
         self.name_space_entry.grid(         column=1, row=1, columnspan=5, sticky=tk.NSEW)
         self.open_file_button.grid(         column=1, row=2, sticky=tk.NSEW)
@@ -63,13 +82,24 @@ class ParseFile(tk.Frame):
         self.max_of_horizont_label.grid(    column=3, row=4, columnspan=2, sticky=tk.NSEW)
         self.max_of_horizont_entry.grid(    column=3, row=5, columnspan=2, sticky=tk.NSEW)
         self.table.grid(                    column=1, row=6, columnspan=4, sticky=tk.NSEW)
-        self.precision_scroll.grid(         column=2, row=7, columnspan=4, sticky=tk.NSEW)
-        self.precision_label.grid(          column=1, row=7, columnspan=1, sticky=tk.NSEW)
+        # self.precision_scroll.grid(         column=2, row=7, columnspan=4, sticky=tk.NSEW)
+        # self.precision_label.grid(          column=1, row=7, columnspan=1, sticky=tk.NSEW)
         self.ore_types_label.grid(          column=5, row=4, rowspan=2, sticky=tk.NSEW)
         self.ore_types_text.grid(           column=5, row=6, rowspan=1, sticky=tk.NSEW)
-        self.recalculate_button.grid(       column=1, row=8, columnspan=5, sticky=tk.NSEW)
-        self.load_data_button.grid(         column=1, row=10, columnspan=5, sticky=tk.NSEW)
+        self.recalculate_button.grid(       column=1, row=8, columnspan=2, sticky=tk.NSEW)
+        self.load_data_button.grid(         column=3, row=8, columnspan=3, sticky=tk.NSEW)
         
+    def __init_treeview(self):
+        for i in range(len(COLUMNS)):
+            self.table.heading(i, text=COLUMNS[i][0])
+            self.table.column(i, width=COLUMNS[i][1], minwidth=COLUMNS[i][1])
+        self.table.column(1, anchor=tk.E)
+        for i in range(3, 5):
+            self.table.column(i, anchor=tk.E)
+        for i in range(5, 16):
+            self.table.column(i, anchor=tk.CENTER)
+
+    
     def _open_file_command(self):
         filename = fd.askopenfilename(defaultextension='.xlsx', filetypes=[('All files','*.*'), 
                                                                             ('Excel documents','*.xlsx')])
@@ -100,7 +130,7 @@ class ParseFile(tk.Frame):
                 #     array.append(round(cell, -self.precision))
                 # else:
                 #     array.append(cell)
-                array.append(cell)
+                array.append(FORMAT_FUNCS[column](cell))
                 self.data['table'][row-2].append(cell)
             nameplace = array[0]
             if nameplace not in self.data['places']:

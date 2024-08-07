@@ -44,7 +44,7 @@ class DataView(tk.Frame):
 
     def _pack(self):
         self.columnconfigure(1, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.rowconfigure(5, weight=1)
         self.top_panel.columnconfigure(1, weight=1)
         self.top_panel.columnconfigure(2, weight=1)
         self.frame_parameters_ores.grid(            column=1, row=1, sticky=tk.NSEW)
