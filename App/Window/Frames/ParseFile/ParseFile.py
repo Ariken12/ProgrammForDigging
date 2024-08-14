@@ -3,7 +3,6 @@ from tkinter import ttk
 from tkinter import filedialog as fd
 import tkinter.messagebox as tkmb
 import os
-import openpyxl as pyxl
 
 from Window.Frames.ParseFile.Constants import *
 
@@ -13,7 +12,7 @@ FORMAT_FUNCS = {
     0: lambda x: x,
     1: lambda x: x,
     2: lambda x: x,
-    3: lambda x: x,
+    3: lambda x: f'{x:.0f}',
     4: lambda x: f'{x:.0f}',
     5: lambda x: f'{x:.0f}',
     6: lambda x: f'{x:.3g}',
@@ -49,14 +48,7 @@ class ParseFile(tk.Frame):
         self.ore_types_label = tk.Label(self, text='Типы пород')
         self.ore_types_text = tk.Text(self, width=10, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.load_data_button = tk.Button(self, text='Начать работу с данными', command=(self._start_))
-        self.data = {
-            'table': [],
-            'name_space': '',
-            'horizont_size': 0,
-            'max_horizont': 0,
-            'ore_types': [],
-            'places': []
-        }
+        self.data = self.core.data
         self.ore_types = []
         self._pack()
     
@@ -101,83 +93,43 @@ class ParseFile(tk.Frame):
         if not os.path.exists(filename):
             tkmb.showerror('Ошибка чтения файла', 'Файл не найден, укажите настоящий файл')
             return
-        try:
-            self.core.parser(filename)
-        except Exception as e:
-            tkmb.showerror("Ошибка парсинга файла", "Ошибка: проверьте правильность формата файла")
-        try:
-            workbook = pyxl.load_workbook(filename)
-        except:
-            tkmb.showerror('Ошибка чтения файла', 'Проверьте правильность формата файла, не могу прочитать')
-            return
-        worksheet = workbook[workbook.sheetnames[0]]
-        self.data['table'].clear()
-        array = []
-        last_horizont = 10 ** 6
-        last_namespace = ''
-        for row in range(2, worksheet.max_row+1):
-            array.clear()
-            self.data['table'].append([])
-            for column in range(1, worksheet.max_column+1):
-                cell = worksheet.cell(row, column).value
-                array.append(FORMAT_FUNCS[column](cell))
-                self.data['table'][row-2].append(cell)
-            nameplace = array[0]
-            if nameplace not in self.data['places']:
-                self.data['places'].append(nameplace)
-            namespace = '_'.join(array[0].split('_')[:-1])
-            if namespace not in self.data['name_space'].split(' | '):
-                if len(self.data['name_space']) < 1:
-                    self.data['name_space'] = namespace
-                else:
-                    self.data['name_space'] += ' | ' + namespace
-            horizont = array[1]
-            d_horizont = last_horizont - horizont
-            if horizont > self.data['max_horizont']:
-                self.data['max_horizont'] = horizont
-            if last_horizont == 10 ** 6:
-                pass
-            elif last_namespace != array[0]:
-                last_horizont = 10 ** 6
-            elif self.data['horizont_size'] == 0:
-                self.data['horizont_size'] = d_horizont
-            elif not (self.data['horizont_size'] == d_horizont or d_horizont == 0):
+        self.core.clean()
+        parser_handler = self.core.parser(filename)
+        self.data = self.core.data
+        while (status := next(parser_handler)) != 100:
+            self.progressbar['value'] = status
+            if status == -1:
+                tkmb.showerror("Ошибка парсинга файла", "Ошибка: проверьте правильность формата файла")
+                return
+            if status == -2:
                 tkmb.showwarning('Внимание', 'Разный размер горизонтов')
-            last_horizont = horizont
-            last_namespace = array[0]
-            ore_type = array[2]
-            if ore_type not in self.data['ore_types']:
-                self.data['ore_types'].append(ore_type)
             self.__update_states()
-            self.table.insert("", row-2, values=array)
-            self.progressbar['value'] = int(row * 100 / (worksheet.max_row-1))
             self.update()
+        self.progressbar['value'] = 100
+        self.__update_states()
+        self.update()
+        self._fill_table()
 
     def __update_states(self):
         self.name_space_entry.delete(0, tk.END)
-        self.name_space_entry.insert(0, self.data['name_space'])
+        self.name_space_entry.insert(0, self.data.name_space)
         self.size_of_horizont_entry['state'] = tk.NORMAL
         self.size_of_horizont_entry.delete(0, tk.END)
-        self.size_of_horizont_entry.insert(0, str(self.data['horizont_size']))
+        self.size_of_horizont_entry.insert(0, str(self.data.horizont_size))
         self.size_of_horizont_entry['state'] = tk.DISABLED
         self.max_of_horizont_entry['state'] = tk.NORMAL
         self.max_of_horizont_entry.delete(0, tk.END)
-        self.max_of_horizont_entry.insert(0, str(self.data['max_horizont']))
+        self.max_of_horizont_entry.insert(0, str(self.data.max_horizont))
         self.max_of_horizont_entry['state'] = tk.DISABLED
         self.ore_types_text['state'] = tk.NORMAL
         self.ore_types_text.delete(0.0, tk.END)
-        self.ore_types_text.insert(0.0, ' '.join(self.data['ore_types']))
+        self.ore_types_text.insert(0.0, ' '.join(self.data.ore_types))
         self.ore_types_text['state'] = tk.DISABLED
 
     def _save_file_command(self):
         pass
 
     def _start_(self):
-        self.core.clean()
-        self.core.set(table=self.data['table'], 
-                              name_space=self.data['name_space'],
-                              ore_types=self.data['ore_types'],
-                              places=self.data['places'])
         self.master._start_calculation()
 
     def _change_precision(self, precision):
@@ -190,7 +142,10 @@ class ParseFile(tk.Frame):
 
     def _fill_table(self):
         self._clear_table()
-        for i in range(len(self.data['table'])):
-            self.progressbar['value'] = int(i * 100 / (len(self.data['table'])))
-            self.table.insert("", i, values=self.data['table'][i])
+        width = 16
+        for i in range(len(self.data.table)):
+            self.progressbar['value'] = int(i * 100 / (len(self.data.table)))
+            self.table.insert("", i, values=tuple([ FORMAT_FUNCS[j](self.data.table[i][j]) for j in range(width)]))
             self.update()
+        self.progressbar['value'] = 100
+        self.update()

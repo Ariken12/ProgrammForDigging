@@ -8,17 +8,23 @@ data = 'Вскрыша_1 Вскрыша_2 Вскрыша_3 Вскрыша_4 Вс
 class MainWindow(tk.Tk):
     def __init__(self, core, *args, **kwargs):
         super().__init__()
-        self.geometry('1920x1080+0+0')
+        self.geometry('1800x1000+0+0')
+        self.title('Планировщик горных работ')
         self.app_core = core
         self.parse_frame = f.ParseFile(core)
         self.data_view = f.DataView(core)
-        # self.data_view.init()
-        self.parse_frame.pack(expand=1, fill=tk.BOTH)
-        self.data_view.pack(expand=1, fill=tk.BOTH)
+        self._pack()
+        # -------------!!!!!!!!!!!!test command!!!!!!!!!!!------------------
         self.parse_frame.open_file_entry.insert(0, './resources/input1.xlsx')
         self.parse_frame._load_file_command()
         self.parse_frame._start_()
         self.update()
+        # -------------!!!!!!!!!!!!test command!!!!!!!!!!!------------------
+
+    def _pack(self):
+        self.parse_frame.pack(side=tk.TOP, expand=1, fill=tk.BOTH)
+        self.data_view.pack(side=tk.TOP, expand=1, fill=tk.BOTH)
+
 
     def _start_calculation(self):
         self.data_view.init()

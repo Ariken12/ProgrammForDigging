@@ -1,6 +1,6 @@
-from Core.Data import Data
-from Core.Compute import Compute
-from Core.Parser import Parser
+from Core.Components.Data import Data
+from Core.Components.Compute import Compute
+from Core.Components.Parser import Parser
 
 
 class Core:

@@ -1,5 +1,9 @@
-a = [1, 2, 3]
-b = [3, 4, 5]
+def func():
+    a = 0
+    while a >= 0:
+        a += 1
+        yield a
 
-for i in enumerate(a), b:
-    print(i)
+gen = func()
+for i in range(10):
+    print(next(gen))
