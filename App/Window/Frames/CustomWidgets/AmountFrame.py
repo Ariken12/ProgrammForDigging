@@ -20,6 +20,8 @@ class AmountFrame(ttk.Labelframe):
 
     def set_headers(self, headers):
         self.list_of_ores = headers
+        self.labeles.clear()
+        self.entryes.clear()
         for ore in headers:
             self.labeles.append(tk.Label(self, text=ore, justify=tk.RIGHT))
             self.entryes.append(tk.Entry(self, justify=tk.LEFT, state='readonly' if self.readonly else 'normal'))

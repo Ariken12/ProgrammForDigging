@@ -4,8 +4,8 @@ import sys
 from datetime import datetime as dt
 
 from Window.Frames.DataView.Constants import *
-from Window.Frames.DataView.ParametersFrame import ParametersFrame
-from Window.Frames.DataView.AmountFrame import AmountFrame
+from Window.Frames.CustomWidgets.ParametersFrame import ParametersFrame
+from Window.Frames.CustomWidgets.AmountFrame import AmountFrame
 
 
 class DataView(tk.Frame):
@@ -13,7 +13,6 @@ class DataView(tk.Frame):
         super().__init__(*args, **kwargs)
         self.core = core
         self.ore_types = []
-        self.label_carrier_name = tk.Label(self, text='Название карьера', font='Arial 20', justify=tk.CENTER)
         self.top_panel = tk.Frame(self)
         self.frame_parameters_ores = ParametersFrame(self.top_panel, headers=self.ore_types, variants=PARAMETERS_1, text="Руды/Вскрыша")
         self.frame_parameters_components = ParametersFrame(self.top_panel, headers=COMPONENTS, variants=PARAMETERS_2, text="Единицы измерения")
@@ -32,8 +31,10 @@ class DataView(tk.Frame):
 
         self.amount_of_component = AmountFrame(self, headers=COMPONENTS, readonly=True, text='Сумма компонентов по плану')
         self.amount_of_ore = AmountFrame(self, headers=self.ore_types, text='Сумма руды по плану')
-        self.button_recalculate = tk.Button(self, text='Пересчитать значения', command=self._recalculate_values)
-        self.button_calculate = tk.Button(self, text='Рассчитать Значения', command=self.calculation_run)
+        self.button_recalculate = tk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
+        self.variable_fix_place = tk.BooleanVar()
+        self.checkbutton_fix_place = tk.Checkbutton(self, text='Зафиксировать местность', variable=self.variable_fix_place)
+        self.button_calculate = tk.Button(self, text='Рассчитать план', command=self.calculation_run)
         self.button_recalculate['state'] = tk.DISABLED
         self._bind()
         self._pack()
@@ -49,7 +50,6 @@ class DataView(tk.Frame):
         self.top_panel.columnconfigure(2, weight=1)
         self.frame_parameters_ores.grid(            column=1, row=1, sticky=tk.NSEW)
         self.frame_parameters_components.grid(      column=2, row=1, sticky=tk.NSEW)
-        self.label_carrier_name.grid(               column=1, row=1, columnspan=7, sticky=tk.NSEW)
         self.top_panel.grid(                        column=1, row=2, columnspan=7, sticky=tk.NSEW)
         self.label_calendar.grid(                   column=1, row=3, sticky=tk.NSEW)
         self.label_places.grid(                     column=2, row=3, sticky=tk.NSEW)
@@ -58,10 +58,11 @@ class DataView(tk.Frame):
         self.listbox_calendar.grid(                 column=1, row=5, sticky=tk.NSEW)
         self.listbox_places.grid(                   column=2, row=5, sticky=tk.NSEW)
         self.treeview_horizonts.grid(               column=3, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
-        self.amount_of_component.grid(              column=4, row=3, columnspan=1, rowspan=3, sticky=tk.NS)
-        self.amount_of_ore.grid(                    column=5, row=3, columnspan=1, rowspan=3, sticky=tk.NS)
-        self.button_recalculate.grid(               column=1, row=6, columnspan=7, sticky=tk.EW)
-        self.button_calculate.grid(                 column=1, row=7, columnspan=7, sticky=tk.EW)
+        self.amount_of_component.grid(              column=4, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
+        self.amount_of_ore.grid(                    column=5, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
+        self.button_recalculate.grid(               column=1, row=6, columnspan=6, sticky=tk.NSEW)
+        self.checkbutton_fix_place.grid(            column=6, row=6, columnspan=1, sticky=tk.NSEW)
+        self.button_calculate.grid(                 column=1, row=7, columnspan=7, sticky=tk.NSEW)
 
     def _listbox_date_handler(self, event):
         cursor = self.listbox_calendar.selection_get()
@@ -103,7 +104,6 @@ class DataView(tk.Frame):
     def init(self):
         career_name, places, ore_types = self.core.data_get_meta()
 
-        self.label_carrier_name['text'] = career_name
         self.frame_parameters_ores.set_headers(ore_types)
         self.amount_of_ore.set_headers(ore_types)
 
@@ -114,9 +114,11 @@ class DataView(tk.Frame):
         self.core.set(dates=dates)
 
         self.listbox_places['state'] = tk.NORMAL
+        self.listbox_places.delete(0, tk.END)
         for place in places:
             self.listbox_places.insert(tk.END, place)
         self.listbox_places['state'] = tk.DISABLED
+        self.listbox_calendar.delete(0, tk.END)
         self.listbox_calendar.insert(tk.END, first_date)
         self._pack()
 

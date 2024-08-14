@@ -4,8 +4,6 @@ from tkinter import filedialog as fd
 import tkinter.messagebox as tkmb
 import os
 import openpyxl as pyxl
-from openpyxl import load_workbook
-import re
 
 from Window.Frames.ParseFile.Constants import *
 
@@ -51,11 +49,6 @@ class ParseFile(tk.Frame):
         self.ore_types_label = tk.Label(self, text='Типы пород')
         self.ore_types_text = tk.Text(self, width=10, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.load_data_button = tk.Button(self, text='Начать работу с данными', command=(self._start_))
-        # self.precision = -2
-        # self.precision_var = tk.IntVar(value=self.precision)
-        # self.precision_scroll = tk.Scale(self, orient=tk.HORIZONTAL, from_=6, to=-10, variable=self.precision_var, command=self._change_precision)
-        # self.precision_label = tk.Label(self, text='0.01')
-        self.recalculate_button = tk.Button(self, text='Отобразить точность', command=(self._recalculate_command))
         self.data = {
             'table': [],
             'name_space': '',
@@ -82,12 +75,9 @@ class ParseFile(tk.Frame):
         self.max_of_horizont_label.grid(    column=3, row=4, columnspan=2, sticky=tk.NSEW)
         self.max_of_horizont_entry.grid(    column=3, row=5, columnspan=2, sticky=tk.NSEW)
         self.table.grid(                    column=1, row=6, columnspan=4, sticky=tk.NSEW)
-        # self.precision_scroll.grid(         column=2, row=7, columnspan=4, sticky=tk.NSEW)
-        # self.precision_label.grid(          column=1, row=7, columnspan=1, sticky=tk.NSEW)
-        self.ore_types_label.grid(          column=5, row=4, rowspan=2, sticky=tk.NSEW)
-        self.ore_types_text.grid(           column=5, row=6, rowspan=1, sticky=tk.NSEW)
-        self.recalculate_button.grid(       column=1, row=8, columnspan=2, sticky=tk.NSEW)
-        self.load_data_button.grid(         column=3, row=8, columnspan=3, sticky=tk.NSEW)
+        self.ore_types_label.grid(          column=5, row=4, rowspan=2,    sticky=tk.NSEW)
+        self.ore_types_text.grid(           column=5, row=6, rowspan=1,    sticky=tk.NSEW)
+        self.load_data_button.grid(         column=1, row=8, columnspan=5, sticky=tk.NSEW)
         
     def __init_treeview(self):
         for i in range(len(COLUMNS)):
@@ -112,6 +102,10 @@ class ParseFile(tk.Frame):
             tkmb.showerror('Ошибка чтения файла', 'Файл не найден, укажите настоящий файл')
             return
         try:
+            self.core.parser(filename)
+        except Exception as e:
+            tkmb.showerror("Ошибка парсинга файла", "Ошибка: проверьте правильность формата файла")
+        try:
             workbook = pyxl.load_workbook(filename)
         except:
             tkmb.showerror('Ошибка чтения файла', 'Проверьте правильность формата файла, не могу прочитать')
@@ -126,10 +120,6 @@ class ParseFile(tk.Frame):
             self.data['table'].append([])
             for column in range(1, worksheet.max_column+1):
                 cell = worksheet.cell(row, column).value
-                # if type(cell) in (int, float):
-                #     array.append(round(cell, -self.precision))
-                # else:
-                #     array.append(cell)
                 array.append(FORMAT_FUNCS[column](cell))
                 self.data['table'][row-2].append(cell)
             nameplace = array[0]
@@ -190,9 +180,6 @@ class ParseFile(tk.Frame):
                               places=self.data['places'])
         self.master._start_calculation()
 
-    def _recalculate_command(self):
-        self._fill_table()
-
     def _change_precision(self, precision):
         self.precision = int(precision)
         self.precision_label.config(text=str(10 ** self.precision))
@@ -204,8 +191,6 @@ class ParseFile(tk.Frame):
     def _fill_table(self):
         self._clear_table()
         for i in range(len(self.data['table'])):
-            self.table.insert("", i, values=list(map(
-                lambda x: round(x, -self.precision) if type(x) in (int, float) else x, 
-                self.data['table'][i]
-                )))
+            self.progressbar['value'] = int(i * 100 / (len(self.data['table'])))
+            self.table.insert("", i, values=self.data['table'][i])
             self.update()
