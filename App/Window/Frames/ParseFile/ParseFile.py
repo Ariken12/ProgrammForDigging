@@ -48,6 +48,7 @@ class ParseFile(tk.Frame):
         self.ore_types_label = tk.Label(self, text='Типы пород')
         self.ore_types_text = tk.Text(self, width=10, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.load_data_button = tk.Button(self, text='Начать работу с данными', command=(self._start_))
+        self.load_data_button['state'] = tk.DISABLED
         self.data = self.core.data
         self.ore_types = []
         self._pack()
@@ -107,6 +108,7 @@ class ParseFile(tk.Frame):
             self.update()
         self.progressbar['value'] = 100
         self.__update_states()
+        self.load_data_button['state'] = tk.NORMAL
         self.update()
         self._fill_table()
 

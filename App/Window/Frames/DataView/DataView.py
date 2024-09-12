@@ -31,13 +31,16 @@ class DataView(tk.Frame):
         self.treeview_horizonts = ttk.Treeview(self, columns=CARREER_HORIZONTS, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
         self._initialization_treeview(self.treeview_horizonts, CARREER_HORIZONTS)
 
-        self.amount_of_component = AmountFrame(self, headers=COMPONENTS, readonly=True, text='Сумма компонентов по плану')
+        self.amount_of_component = AmountFrame(self, headers=COMPONENTS, readonly=True, text='Средневзвешенное по плану')
         self.amount_of_ore = AmountFrame(self, headers=self.ore_types, text='Сумма руды по плану')
+        #self.amount_of_horizonts = AmountFrame(self, headers=('Участок 1',), text='Максимум горизонтов')
         self.button_recalculate = tk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
         self.variable_fix_place = tk.BooleanVar()
         self.checkbutton_fix_place = tk.Checkbutton(self, text='Зафиксировать участок', variable=self.variable_fix_place)
         self.button_calculate = tk.Button(self, text='Рассчитать план', command=self.calculation_run)
         self.button_recalculate['state'] = tk.DISABLED
+        self.text_log = tk.Text(self, height=5)
+        self.text_log['state'] = 'disabled'
         self._bind()
         self._pack()
 
@@ -46,14 +49,16 @@ class DataView(tk.Frame):
         self.listbox_places.bind('<Double-Button-1>', self._listbox_place_handler)
 
     def _pack(self):
-        self.columnconfigure(1, weight=1)
+        self.columnconfigure(3, weight=1)
         self.rowconfigure(5, weight=1)
         self.top_panel.columnconfigure(1, weight=1)
         self.top_panel.columnconfigure(2, weight=1)
+        self.top_panel.rowconfigure(1, weight=1)
+        self.top_panel.rowconfigure(2, weight=1)
         self.frame_parameters_ores.grid(            column=1, row=1, sticky=tk.NSEW)
-        self.frame_parameters_components.grid(      column=2, row=1, sticky=tk.NSEW)
-        self.frame_input_parameters.grid(           column=1, row=0, columnspan=5, sticky=tk.NSEW)
-        self.top_panel.grid(                        column=1, row=2, columnspan=5, sticky=tk.NSEW)
+        self.frame_parameters_components.grid(      column=1, row=2, sticky=tk.NSEW)
+        self.frame_input_parameters.grid(           column=1, row=0, columnspan=6, sticky=tk.NSEW)
+        self.top_panel.grid(                        column=1, row=2, columnspan=6, sticky=tk.NSEW)
         self.label_calendar.grid(                   column=1, row=3, sticky=tk.NSEW)
         self.label_places.grid(                     column=2, row=3, sticky=tk.NSEW)
         self.label_calendar_choosen.grid(           column=1, row=4, sticky=tk.NSEW)
@@ -63,9 +68,11 @@ class DataView(tk.Frame):
         self.treeview_horizonts.grid(               column=3, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
         self.amount_of_component.grid(              column=4, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
         self.amount_of_ore.grid(                    column=5, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
-        self.button_recalculate.grid(               column=1, row=6, columnspan=4, sticky=tk.NSEW)
+        #self.amount_of_horizonts.grid(              column=6, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
+        self.button_recalculate.grid(               column=1, row=6, columnspan=5, sticky=tk.NSEW)
         self.checkbutton_fix_place.grid(            column=5, row=6, columnspan=1, sticky=tk.NSEW)
         self.button_calculate.grid(                 column=1, row=7, columnspan=5, sticky=tk.NSEW)
+        self.text_log.grid(                         column=1, row=8, columnspan=5, sticky=tk.NSEW)
 
     def _listbox_date_handler(self, event):
         cursor = self.listbox_calendar.selection_get()
@@ -109,6 +116,10 @@ class DataView(tk.Frame):
 
         self.frame_parameters_ores.set_headers(ore_types)
         self.amount_of_ore.set_headers(ore_types)
+        # self.amount_of_horizonts.set_headers(places)
+
+        self.frame_input_parameters.set_places(list(places.keys()))
+        self.frame_input_parameters.set_components(COMPONENTS)
 
         first_date = f'{dt.today().date()}'
         dates = {first_date: {}}
@@ -126,4 +137,20 @@ class DataView(tk.Frame):
         self._pack()
 
     def calculation_run(self):
-        pass
+        parameters = self.frame_input_parameters.get_parameters()
+        parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
+        parameters['measure_count'] = self.frame_parameters_components.get_all()
+        self.core.set(parameters=parameters)
+        proc = self.core.start()
+        while (output := next(proc)) != None:
+            self.text_log['state'] = tk.NORMAL
+            self.text_log.delete(0.0, tk.END)
+            self.text_log.insert(0.0, output)
+            self.text_log['state'] = tk.DISABLED
+            self.update()
+        self.text_log['state'] = tk.NORMAL
+        self.text_log.delete(0.0, tk.END)
+        self.text_log.insert(0.0, 'Рассчет завершен')
+        self.text_log['state'] = tk.DISABLED
+
+        

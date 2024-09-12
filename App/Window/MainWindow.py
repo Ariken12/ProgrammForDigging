@@ -23,7 +23,7 @@ class MainWindow(tk.Tk):
 
     def _pack(self):
         self.parse_frame.pack(side=tk.TOP, expand=1, fill=tk.BOTH)
-        self.data_view.pack(side=tk.TOP, expand=1, fill=tk.BOTH)
+        #self.data_view.pack(side=tk.TOP, expand=1, fill=tk.BOTH)
 
 
     def _start_calculation(self):
@@ -32,8 +32,12 @@ class MainWindow(tk.Tk):
 
     def _switch_frames(self, mode):
         if mode == 'parse_frame':
-            # self.data_view.pack_forget()
+            self.data_view.pack_forget()
             self.parse_frame.pack(expand=1, fill=tk.BOTH)
         elif mode == 'data_view':
             self.data_view.pack(expand=1, fill=tk.BOTH)
-            # self.parse_frame.pack_forget()
+            self.parse_frame.pack_forget()
+            for entry in self.data_view.frame_input_parameters.entrys_acceleration + \
+                        self.data_view.frame_input_parameters.entrys_components + \
+                        self.data_view.frame_input_parameters.entrys_max_depth:
+                entry.insert(0, '10000')

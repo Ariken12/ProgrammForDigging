@@ -7,3 +7,5 @@ def func():
 gen = func()
 for i in range(10):
     print(next(gen))
+
+print(list(enumerate({'123': 123, 'ewq': "adsf", 123: 312, (123, 321): '321'}, 1)))

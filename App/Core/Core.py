@@ -25,3 +25,10 @@ class Core:
     
     def recalculate(self):
         self.compute.calculate_places()
+
+    def start(self):
+        process = self.compute.main_calculate()
+        while (output := next(process)) != None:
+            yield output
+        while True:
+            yield None

@@ -18,6 +18,8 @@ class ParametersFrame(ttk.Labelframe):
         self._pack()
 
     def _pack(self):
+        for i in range(1, len(self.label_headers)+2):
+            self.columnconfigure(i, weight=1)
         for i, label in enumerate(self.label_variants):
             label.grid(column=1, row=1+i, sticky=tk.NSEW)
         for i, label in enumerate(self.label_headers):
@@ -29,6 +31,12 @@ class ParametersFrame(ttk.Labelframe):
 
     def get(self, i):
         return self.variables[i].get()
+    
+    def get_all(self):
+        output = []
+        for var in self.variables:
+            output.append(var.get())
+        return tuple(output)
     
     def set(self, i, val):
         return self.variables[i].set(val)

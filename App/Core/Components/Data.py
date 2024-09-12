@@ -24,6 +24,7 @@ class Data:
         '''{'date': {'place': ['component1', ...]}}'''
         self.plan = {'date': {'place': [('horizonts', 'ores'), ...]}}
         self.resources_for_plan = {'date': {'place': ['ore_1', 'ore_2']}}
+        self.parameters = {}
 
     def get_meta(self):
         return self.name_space, self.places, self.ore_types
@@ -57,6 +58,9 @@ class Data:
                 for place in resources[date]:
                     self.resources_for_plan[date][place] = resources[date][place]
                     self.components[date][place] = []
+        if 'parameters' in kwargs:
+            for key in kwargs['parameters']:
+                self.parameters[key] = kwargs['parameters'][key]
 
     def __getitem__(self, key):
         if key in self.places:
