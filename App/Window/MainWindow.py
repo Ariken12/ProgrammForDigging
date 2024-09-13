@@ -37,7 +37,14 @@ class MainWindow(tk.Tk):
         elif mode == 'data_view':
             self.data_view.pack(expand=1, fill=tk.BOTH)
             self.parse_frame.pack_forget()
+            # -------------!!!!!!!!!!!!test command!!!!!!!!!!!------------------
             for entry in self.data_view.frame_input_parameters.entrys_acceleration + \
                         self.data_view.frame_input_parameters.entrys_components + \
                         self.data_view.frame_input_parameters.entrys_max_depth:
-                entry.insert(0, '10000')
+                entry.insert(0, '1000')
+            self.data_view.frame_parameters_ores.variables[-1].set(1)
+            self.data_view.frame_parameters_ores.variables[-2].set(1)
+            self.data_view.frame_parameters_ores.variables[-3].set(1)
+            self.data_view.frame_parameters_ores.variables[-4].set(1)
+            self.data_view.frame_parameters_ores.variables[-5].set(1)
+            # -------------!!!!!!!!!!!!test command!!!!!!!!!!!------------------

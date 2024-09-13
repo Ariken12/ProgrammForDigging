@@ -78,7 +78,7 @@ class DataView(tk.Frame):
         cursor = self.listbox_calendar.selection_get()
         self.label_calendar_choosen['text'] = cursor
         self.listbox_places['state'] = tk.NORMAL
-        print(cursor)
+        self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
 
     def _listbox_place_handler(self, event):
         self.button_recalculate['state'] = tk.NORMAL
@@ -137,20 +137,23 @@ class DataView(tk.Frame):
         self._pack()
 
     def calculation_run(self):
+        self.button_calculate['state'] = tk.DISABLED
+        self.listbox_calendar.delete(0, tk.END)
         parameters = self.frame_input_parameters.get_parameters()
         parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
         parameters['measure_count'] = self.frame_parameters_components.get_all()
         self.core.set(parameters=parameters)
-        proc = self.core.start()
-        while (output := next(proc)) != None:
-            self.text_log['state'] = tk.NORMAL
-            self.text_log.delete(0.0, tk.END)
-            self.text_log.insert(0.0, output)
-            self.text_log['state'] = tk.DISABLED
-            self.update()
-        self.text_log['state'] = tk.NORMAL
-        self.text_log.delete(0.0, tk.END)
-        self.text_log.insert(0.0, 'Рассчет завершен')
-        self.text_log['state'] = tk.DISABLED
+        try:
+            proc = self.core.start()
+            while (output := next(proc)) != None:
+                self.text_log['state'] = tk.NORMAL
+                self.text_log.delete(0.0, tk.END)
+                self.text_log.insert(0.0, output)
+                self.text_log['state'] = tk.DISABLED
+                self.update()
+            for date in self.core.data.plan:
+                self.listbox_calendar.insert(tk.END, date)
+        finally:
+            self.button_calculate['state'] = tk.NORMAL
 
         

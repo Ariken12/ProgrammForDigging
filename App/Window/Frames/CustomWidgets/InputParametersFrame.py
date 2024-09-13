@@ -121,7 +121,7 @@ class InputParametersFrame(ttk.LabelFrame):
             output['acceleration'].append(float(entry.get()))
         output['max_dh'] = {}
         for i, entry in enumerate(self.entrys_max_depth):
-            output['max_dh'] = float(entry.get())
+            output['max_dh'][self.labels_max_depth[i]['text']] = float(entry.get())
         output['components_lim'] = []
         for entry in self.entrys_components:
             output['components_lim'].append(float(entry.get()))
