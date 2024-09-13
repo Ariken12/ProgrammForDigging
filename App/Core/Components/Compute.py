@@ -44,8 +44,6 @@ class Compute:
     def calculate_years(self):
         yield self.log(4, 'Рассчет плана')
         acceleration = self.data.parameters['acceleration']
-        self.wb = opx.Workbook()
-        self.ws = self.wb.active
         self.speed = acceleration[0]
         i_speed = 0
         end_i_speed = len(acceleration) - 1
@@ -219,6 +217,9 @@ class Compute:
         self.log_ores.append({})
         for i_place, num_of_layers in enumerate(self.choosen_variant):
             place = self.place_names[i_place]
+            # -------logging -------------
+            self.log_all.append(0)
+            # ----------logging ----------------
             i_layer = 0
             while i_layer < num_of_layers:
                 if not self.remains[place]:
@@ -229,6 +230,9 @@ class Compute:
                     self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
                     self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
                     self.remains[place][horizont]['SUMM']['COMPONENTS'] -= self.remains[place][horizont]['SUMM']['COMPONENTS'] * k
+                    # ----------logging-----------
+                    self.log_all[-1] += self.remains[place][horizont]['SUMM']['M'] * k
+                    # ----------logging-----------
                     for ore in self.remains[place][horizont]['ORE']:
                         # -------------logging------------
                         if ore not in self.log_ores[-1]:
@@ -279,16 +283,30 @@ class Compute:
             plt.plot(ores[ore]['x'], ores[ore]['y'], label=ore)
             plt.savefig(f'Скорость добычи {ore}.png', dpi=300)
             plt.clf()
+        self.wb = opx.Workbook()
+        self.ws = self.wb.active
+        output = ['Год', 'Сумма за год'] + list(self.place_names) + self.data.ore_types + list(self.data.components_types)
+        for col in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            self.ws.column_dimensions[col].width = 15
+        self.ws.append(output)
         plan = self.data.plan
         years = [year for year in tuple(plan)[1::self.date_scale]]
         for i, year in enumerate(years):
-            for i_place, k in enumerate(self.choosen_variant):
-                if k < 0:
-                    continue
-                place = self.place_names[i_place]
-                ores = {}
-                for ore in self.data.plan[year][place]:
-                    pass
+            summ = round(self.log_speed[i], 0)
+            places = []
+            for k in self.log_variants[i]:
+                places.append(int(k)+int(k % 1 > EPSILON))
+            ores = []
+            for ore in self.data.ore_types:
+                if ore in self.log_ores[i]:
+                    ores.append(round(self.log_ores[i][ore], 2))
+                else:
+                    ores.append(0)
+            components = list(map(lambda x: round(x, 3), list(self.log_components[i])))
+            k = self.log_k[i]
+            output = [year, summ] + places + ores + components
+            self.ws.append(output)
+        self.wb.save('План горных работ.xlsx')
 
     def load_parameters(self):
         self.k_calculate = {

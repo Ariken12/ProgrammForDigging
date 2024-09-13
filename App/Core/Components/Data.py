@@ -15,6 +15,7 @@ class Data:
         self.table = []
         self.name_space = ''
         self.ore_types = []
+        self.components_types = []
         self.horizont_size = 0
         self.max_horizont = 0
         self.data = None
@@ -36,6 +37,8 @@ class Data:
             self.name_space = kwargs['name_space']
         if 'ore_types' in kwargs:
             self.ore_types = kwargs['ore_types']
+        if 'component_types' in kwargs:
+            self.components_types = kwargs['component_types']
         if 'places' in kwargs:
             for place in kwargs['places']:
                 self.places[place] = []

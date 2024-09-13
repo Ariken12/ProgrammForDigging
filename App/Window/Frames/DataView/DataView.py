@@ -126,6 +126,7 @@ class DataView(tk.Frame):
         for place in places:
             dates[first_date][place] = []
         self.core.set(dates=dates)
+        self.core.set(component_types=COMPONENTS)
 
         self.listbox_places['state'] = tk.NORMAL
         self.listbox_places.delete(0, tk.END)
