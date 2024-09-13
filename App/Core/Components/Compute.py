@@ -8,7 +8,7 @@ import openpyxl as opx
 
 
 
-EPSILON = 10 ** -6
+EPSILON = 10 ** -3
 
 
 class Compute:
@@ -56,7 +56,7 @@ class Compute:
             self.data.plan[self.data.parameters['begin_date']][place] = []
         self.log(0, f'Год {self.year}')
         yield self.log(1, f'Скорость {self.speed}')
-        while self.check_empty_carreer():
+        while self.check_empty_carreer() > EPSILON:
             self.year += 1
             self.calculate_carreer_digging()
             print(self.choosen_variant)
@@ -282,12 +282,13 @@ class Compute:
         plan = self.data.plan
         years = [year for year in tuple(plan)[1::self.date_scale]]
         for i, year in enumerate(years):
-            for i_place, k in self.choosen_variant:
+            for i_place, k in enumerate(self.choosen_variant):
                 if k < 0:
                     continue
                 place = self.place_names[i_place]
                 ores = {}
-                for ore in self.plan[year][place]
+                for ore in self.data.plan[year][place]:
+                    pass
 
     def load_parameters(self):
         self.k_calculate = {
@@ -345,7 +346,7 @@ class Compute:
         for place in self.remains:
             for horizont in self.remains[place]:
                 M += self.remains[place][horizont]['SUMM']['M']
-        return M > EPSILON
+        return M
 
     
     def calculate_places(self):
