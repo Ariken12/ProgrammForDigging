@@ -163,3 +163,5 @@ cython_debug/
 
 doc/
 *.png
+*.xlsx
+*.xlsx#
