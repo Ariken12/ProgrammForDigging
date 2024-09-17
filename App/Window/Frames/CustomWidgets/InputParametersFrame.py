@@ -29,7 +29,7 @@ class InputParametersFrame(ttk.LabelFrame):
         self.entry_started_date.insert(0, first_date)
 
         self.label_precision_date = tk.Label(self, text='Дробность периодов')
-        self.list_precision_date = ['Год', 'Полугодие', 'Сезон', 'Месяц', 'Неделя']
+        self.list_precision_date = ['Год', 'Полугодие', 'Квартал', 'Месяц', 'Неделя']
         self.combobox_precision_date = ttk.Combobox(self, values=self.list_precision_date)
         self.combobox_precision_date.set(self.list_precision_date[0])
 

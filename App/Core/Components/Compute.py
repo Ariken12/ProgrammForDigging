@@ -24,7 +24,7 @@ class Compute:
         self.log_speed = []
         self.log_ores = []
         self.log_components = []
-        self.log_all = []
+        self.log_places = []
         self.speed = 0
 
 
@@ -54,7 +54,8 @@ class Compute:
             self.data.plan[self.data.parameters['begin_date']][place] = []
         self.log(0, f'Год {self.year}')
         yield self.log(1, f'Скорость {self.speed}')
-        while self.check_empty_carreer() > EPSILON:
+        while (summ_of_remain := self.check_empty_carreer()) > EPSILON:
+            print(summ_of_remain)
             self.year += 1
             self.calculate_carreer_digging()
             print(self.choosen_variant)
@@ -62,8 +63,8 @@ class Compute:
                 i_speed += 1
                 self.speed = acceleration[i_speed]
                 self.log(1, f'Скорость {self.speed}')
-            self.logging()
             yield self.log(0, f'Год {self.year}')
+        print(summ_of_remain)
         self.write_output()
         yield None
 
@@ -96,7 +97,7 @@ class Compute:
             next_m = self.remains[place][layer]['SUMM']['M']
             summ_of_layer = self.all_resources[place][layer]['SUMM']['M']
             if summ + next_m > self.speed:
-                i = i + (self.speed - summ) / summ_of_layer - 1
+                i = i + (self.speed - summ) / next_m - 1
                 summ = self.speed
             else:
                 summ += next_m
@@ -157,6 +158,12 @@ class Compute:
     def update_plan(self):
         date_start = tuple(self.data.plan)[-1]
         timedelta = dt.timedelta(milliseconds=24 * 60 * 60 * 365 * 1000 / self.date_scale)
+        # ------------logging-------------------
+        variant = self.choosen_variant
+        self.log_variants.append(self.choosen_variant)
+        self.log_speed.append(self.variants[variant])
+        self.log_k.append(self.k_variants[variant])
+        # -------------------------------
         for i_place, num_of_layers in enumerate(self.choosen_variant):
             place = self.place_names[i_place]
             summ = 0
@@ -166,7 +173,6 @@ class Compute:
             layers_by_time = [self.remains[place][horizonts[i]]['SUMM']['M'] for i in range(int(num_of_layers))]
             if num_of_layers % 1 > 0:
                 layers_by_time.append(self.remains[place][horizonts[int(num_of_layers)]]['SUMM']['M'] * (num_of_layers % 1))
-            layers_by_all = layers_by_time.copy()
             summ_of_mass = sum(layers_by_time)
             for i_date in range(1, self.date_scale+1):
                 new_date = str((dt.datetime.strptime(date_start, "%Y-%m-%d") + timedelta * i_date).date())
@@ -179,9 +185,10 @@ class Compute:
                 if not summ:
                     continue
                 # --------
-                # --------logging--------
+                # ----------logging-----------
+                self.log_ores.append({})
                 self.log_components.append(np.zeros(10))
-                # --------
+                # ----------------------------
                 i_layer = 0
                 while iter_mass < summ-EPSILON:
                     horizont = tuple(self.remains[place])[i_layer]
@@ -192,76 +199,64 @@ class Compute:
                         i_layer += 1
                         continue
                     elif layers_by_time[i_layer] > (summ - iter_mass):
-                        k = (summ - iter_mass) / layers_by_all[i_layer]
-                        iter_mass += layers_by_all[i_layer] * k
-                        layers_by_time[i_layer] -= layers_by_all[i_layer] * k
+                        k = (summ - iter_mass) / self.remains[place][horizont]['SUMM']['M']
+                        iter_mass = summ
+                        layers_by_time[i_layer] -= summ - iter_mass
                     elif layers_by_time[i_layer] <= (summ - iter_mass):
-                        k = layers_by_time[i_layer] / layers_by_all[i_layer]
+                        k = layers_by_time[i_layer] / self.remains[place][horizont]['SUMM']['M']
                         iter_mass += layers_by_time[i_layer]
                         layers_by_time[i_layer] = 0
                     for ore in self.remains[place][horizont]['ORE']:
                         v = self.remains[place][horizont]['ORE'][ore]['V'] * k
                         m = self.remains[place][horizont]['ORE'][ore]['M'] * k
                         components = self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * k
-                        # -------------logging-------------
-                        self.log_components[-1] += components
-                        # -------------logging-------------
                         plan_record = [horizont, ore, v, m] + list(components)
                         self.data.plan[new_date][place].append(tuple(plan_record))
+                        # ----------logging-------------
+                        if ore not in self.log_ores[-1]:
+                            self.log_ores[-1][ore] = 0
+                        self.log_ores[-1][ore] += self.remains[place][horizont]['ORE'][ore]['M'] * k
+                        self.log_components[-1] += components
+                        # ------------------------------
                     
                     i_layer += 1
 
     def update_remains(self):
         if self.choosen_variant == ():
             return
-        self.log_ores.append({})
         for i_place, num_of_layers in enumerate(self.choosen_variant):
             place = self.place_names[i_place]
-            # -------logging -------------
-            self.log_all.append(0)
-            # ----------logging ----------------
             i_layer = 0
             while i_layer < num_of_layers:
                 if not self.remains[place]:
                     break
                 horizont = tuple(self.remains[place])[0]
-                if num_of_layers - i_layer < 1:
-                    k = num_of_layers - i_layer
-                    self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
-                    self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
-                    self.remains[place][horizont]['SUMM']['COMPONENTS'] -= self.remains[place][horizont]['SUMM']['COMPONENTS'] * k
-                    # ----------logging-----------
-                    self.log_all[-1] += self.remains[place][horizont]['SUMM']['M'] * k
-                    # ----------logging-----------
-                    for ore in self.remains[place][horizont]['ORE']:
-                        # -------------logging------------
-                        if ore not in self.log_ores[-1]:
-                            self.log_ores[-1][ore] = 0
-                        self.log_ores[-1][ore] += self.remains[place][horizont]['ORE'][ore]['M'] * k
-                        # -------------logging------------
-                        self.remains[place][horizont]['ORE'][ore]['V'] -= self.remains[place][horizont]['ORE'][ore]['V'] * k
-                        self.remains[place][horizont]['ORE'][ore]['M'] -= self.remains[place][horizont]['ORE'][ore]['M'] * k
-                        self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] -= self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * k
-                        if self.remains[place][horizont]['ORE'][ore]['V'] < EPSILON or self.remains[place][horizont]['SUMM']['M'] < EPSILON:
-                            self.remains[place].pop(horizont)
-                            break
-                    if horizont not in self.remains[place]:
-                        continue
-                    if self.remains[place][horizont]['SUMM']['V'] < EPSILON or self.remains[place][horizont]['SUMM']['M'] < EPSILON:
-                        self.remains[place].pop(horizont)
-                else:
+                k = num_of_layers - i_layer
+                if k > 1:
                     self.remains[place].pop(horizont)
+                    i_layer += 1
+                    continue
+                self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
+                self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
+                self.remains[place][horizont]['SUMM']['COMPONENTS'] -= self.remains[place][horizont]['SUMM']['COMPONENTS'] * k
+                for ore in self.remains[place][horizont]['ORE']:
+                    self.remains[place][horizont]['ORE'][ore]['V'] -= self.remains[place][horizont]['ORE'][ore]['V'] * k
+                    self.remains[place][horizont]['ORE'][ore]['M'] -= self.remains[place][horizont]['ORE'][ore]['M'] * k
+                    self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] -= self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * k
                 i_layer += 1
 
-    def logging(self):
-        variant = self.choosen_variant
-        self.log_variants.append(self.choosen_variant)
-        self.log_k.append(self.k_variants[variant])
-        self.log_speed.append(self.variants[variant])
-
     def write_output(self):
-        plt.plot(range(1, len(self.log_k)+1), self.log_k)
-        plt.savefig('Коэффициент полезной руды.png', dpi=300)
+        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x, self.log_k)))
+        plt.savefig('Процент добычи.png', dpi=300)
+        plt.clf()
+        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: 1-x, self.log_k)))
+        plt.savefig('Процент вскрыши.png', dpi=300)
+        plt.clf()
+        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x/(1-x), self.log_k)))
+        plt.savefig('Коэффициент добычи.png', dpi=300)
+        plt.clf()
+        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: (1-x)/x, self.log_k)))
+        plt.savefig('Коэффициент вскрыши.png', dpi=300)
         plt.clf()
         plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
         plt.savefig('Общая скорость добычи.png', dpi=300)
@@ -285,27 +280,32 @@ class Compute:
             plt.clf()
         self.wb = opx.Workbook()
         self.ws = self.wb.active
-        output = ['Год', 'Сумма за год'] + list(self.place_names) + self.data.ore_types + list(self.data.components_types)
+
+        output = ['Год', 'Сумма за год', 'Коэффициент вскрыши', 'Участок', 'Сумма на участке', 'Количество горизонтов'] + \
+            self.data.ore_types + list(self.data.components_types)
         for col in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             self.ws.column_dimensions[col].width = 15
         self.ws.append(output)
+
         plan = self.data.plan
-        years = [year for year in tuple(plan)[1::self.date_scale]]
-        for i, year in enumerate(years):
-            summ = round(self.log_speed[i], 0)
-            places = []
-            for k in self.log_variants[i]:
-                places.append(int(k)+int(k % 1 > EPSILON))
-            ores = []
-            for ore in self.data.ore_types:
-                if ore in self.log_ores[i]:
-                    ores.append(round(self.log_ores[i][ore], 2))
-                else:
-                    ores.append(0)
-            components = list(map(lambda x: round(x, 3), list(self.log_components[i])))
-            k = self.log_k[i]
-            output = [year, summ] + places + ores + components
-            self.ws.append(output)
+        years = [year for year in tuple(plan)[1:]]
+        for iyear, year in enumerate(years):
+            places = tuple(plan[year])
+            for iplace, place in enumerate(places):
+                summ = round(self.log_speed[i], 0)
+                places = []
+                for k in self.log_variants[i]:
+                    places.append(int(k)+int(k % 1 > EPSILON))
+                ores = []
+                for ore in self.data.ore_types:
+                    if ore in self.log_ores[i]:
+                        ores.append(round(self.log_ores[i][ore], 2))
+                    else:
+                        ores.append(0)
+                components = list(map(lambda x: round(x, 3), list(self.log_components[i])))
+                k = self.log_k[i]
+                output = [year, summ] + places + ores + components
+                self.ws.append(output)
         self.wb.save('План горных работ.xlsx')
 
     def load_parameters(self):
@@ -326,7 +326,7 @@ class Compute:
         self.log_speed.clear()
         self.log_ores.clear()
         self.log_components.clear()
-        self.log_all.clear()
+        self.log_places.clear()
         yield None 
     
     def load_remains(self):
