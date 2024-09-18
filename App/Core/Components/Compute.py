@@ -228,7 +228,7 @@ class Compute:
                     for ore in self.remains[place][horizont]['ORE']:
                         v = round(self.remains[place][horizont]['ORE'][ore]['V'] * k, 1)
                         m = round(self.remains[place][horizont]['ORE'][ore]['M'] * k, 1)
-                        components = np.round(self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * k, 3)
+                        components = np.round(self.remains[place][horizont]['ORE'][ore]['COMPONENTS'], 3)
                         plan_record = [horizont, ore, v, m] + list(components)
                         self.data.plan[new_date][place].append(tuple(plan_record))
                         # ----------logging-------------
