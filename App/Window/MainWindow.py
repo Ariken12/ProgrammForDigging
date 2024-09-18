@@ -15,7 +15,7 @@ class MainWindow(tk.Tk):
         self.data_view = f.DataView(core)
         self._pack()
         # -------------!!!!!!!!!!!!test command!!!!!!!!!!!------------------
-        self.parse_frame.open_file_entry.insert(0, './resources/input1.xlsx')
+        self.parse_frame.open_file_entry.insert(0, './resources/Тест_вариант_3.xlsx')
         self.parse_frame._load_file_command()
         self.parse_frame._start_()
         self.update()

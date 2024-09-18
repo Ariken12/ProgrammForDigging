@@ -2,9 +2,11 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
 import tkinter.messagebox as tkmb
+import Core.Core as Core
+import Core.Components as Data
 import os
 
-from Window.Frames.ParseFile.Constants import *
+from Window.Frames.ParseFile.Constants import COLUMNS, COLUMNS_SIZES
 
 TABLE_HEIGHT = 10
 
@@ -31,7 +33,8 @@ FORMAT_FUNCS = {
 class ParseFile(tk.Frame):
     def __init__(self, core, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.core = core
+        self.core : Core = core
+        self.data : Data = self.core.data
         self.name_space_label = tk.Label(self, text='Название месторождения*', justify=tk.CENTER)
         self.name_space_entry = tk.Entry(self, justify=tk.CENTER, font='bold')
         self.open_file_button = tk.Button(self, text='Выбрать файл', command=(self._open_file_command))
@@ -40,7 +43,6 @@ class ParseFile(tk.Frame):
         self.save_file_button = tk.Button(self, text='Сохранить файл', command=(self._save_file_command))
         self.progressbar = ttk.Progressbar(self, orient='horizontal', length=100, value=100)
         self.table = ttk.Treeview(self, columns=COLUMNS, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
-        self.__init_treeview()
         self.size_of_horizont_label = tk.Label(self, text='Размер горизонта', justify=tk.CENTER)
         self.size_of_horizont_entry = tk.Entry(self, justify=tk.CENTER, state=tk.DISABLED)
         self.max_of_horizont_label = tk.Label(self, text='Максимальная высота горизонта', justify=tk.CENTER)
@@ -49,8 +51,6 @@ class ParseFile(tk.Frame):
         self.ore_types_text = tk.Text(self, width=10, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.load_data_button = tk.Button(self, text='Начать работу с данными', command=(self._start_))
         self.load_data_button['state'] = tk.DISABLED
-        self.data = self.core.data
-        self.ore_types = []
         self._pack()
     
     def _pack(self):
@@ -73,13 +73,16 @@ class ParseFile(tk.Frame):
         self.load_data_button.grid(         column=1, row=8, columnspan=5, sticky=tk.NSEW)
         
     def __init_treeview(self):
-        for i in range(len(COLUMNS)):
-            self.table.heading(i, text=COLUMNS[i][0])
-            self.table.column(i, width=COLUMNS[i][1], minwidth=COLUMNS[i][1])
+        columns = COLUMNS + tuple(self.data.components_types)
+        self.table['columns'] = columns
+        for i in range(len(columns)):
+            width = COLUMNS_SIZES[i] if i < len(COLUMNS_SIZES) else 700 // len(self.data.components_types)
+            self.table.heading(i, text=columns[i])
+            self.table.column(i, width=width, minwidth=width)
         self.table.column(1, anchor=tk.E)
         for i in range(3, 5):
             self.table.column(i, anchor=tk.E)
-        for i in range(5, 16):
+        for i in range(5, 6+len(self.data.components_types)):
             self.table.column(i, anchor=tk.CENTER)
 
     
@@ -110,6 +113,7 @@ class ParseFile(tk.Frame):
         self.__update_states()
         self.load_data_button['state'] = tk.NORMAL
         self.update()
+        self.__init_treeview()
         self._fill_table()
 
     def __update_states(self):
@@ -144,10 +148,10 @@ class ParseFile(tk.Frame):
 
     def _fill_table(self):
         self._clear_table()
-        width = 16
+        width = 6 + len(self.data.components_types)
         for i in range(len(self.data.table)):
             self.progressbar['value'] = int(i * 100 / (len(self.data.table)))
-            self.table.insert("", i, values=tuple([ FORMAT_FUNCS[j](self.data.table[i][j]) for j in range(width)]))
+            self.table.insert("", i, values=tuple([FORMAT_FUNCS[j](self.data.table[i][j]) for j in range(width)]))
             self.update()
         self.progressbar['value'] = 100
         self.update()

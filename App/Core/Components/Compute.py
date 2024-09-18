@@ -39,7 +39,6 @@ class Compute:
         proc = self.calculate_years()
         while (output := next(proc)):
             yield output
-        yield self.log(4, 'Рассчеты завершены')
         yield None
 
     def calculate_years(self):
@@ -54,11 +53,17 @@ class Compute:
         for place in self.remains:
             self.data.plan[self.data.parameters['begin_date']][place] = []
         self.log(0, f'Год {self.year}')
+        self.ok = True
         yield self.log(1, f'Скорость {self.speed}')
         while (summ_of_remain := self.check_empty_carreer()) > EPSILON:
             print(summ_of_remain)
             self.year += 1
-            self.calculate_carreer_digging()
+            try:
+                self.calculate_carreer_digging()
+            except Exception as e:
+                self.ok = False
+                self.log(3, f'Ошибка в вычислениях: {type(e)}: {e}')
+                break
             print(self.choosen_variant)
             if i_speed != end_i_speed:
                 i_speed += 1
@@ -68,10 +73,11 @@ class Compute:
         yield self.log(0, f'План включает {self.year} лет/года')
         yield self.log(1, '')
         yield self.log(2, '')
-        yield self.log(3, '')
+        if self.ok:
+            yield self.log(3, '')
         yield self.log(4, 'Запись отчета')
         self.write_output()
-        yield self.log(4, 'Рассчет закончен')
+        yield self.log(4, 'Рассчет закончен, Отчет записан')
         yield None
 
     def calculate_carreer_digging(self):
@@ -259,35 +265,38 @@ class Compute:
                 i_layer += 1
 
     def write_output(self):
-        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x, self.log_k)))
-        plt.savefig('Процент добычи.png', dpi=300)
-        plt.clf()
-        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: 1-x, self.log_k)))
-        plt.savefig('Процент вскрыши.png', dpi=300)
-        plt.clf()
-        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x/(1-x), self.log_k)))
-        plt.savefig('Коэффициент добычи.png', dpi=300)
-        plt.clf()
-        plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: (1-x)/x, self.log_k)))
-        plt.savefig('Коэффициент вскрыши.png', dpi=300)
-        plt.clf()
-        plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
-        plt.savefig('Общая скорость добычи.png', dpi=300)
-        plt.clf()
-        # places = {}
-        # for year, place in self.log_places:
-        #     if place not in places:
-        #         places[place] = {'x': [], 'y': []}
-        #     places[place]['x'].append(self.log_places[year, place])
-        #     places[place]['y'].append(len(places[place]['x']))
-        # for place in places:
-        #     plt.plot(places[place]['y'], places[place]['x'], label=place)
-        # plt.savefig(f'Скорость добычи по участкам.png', dpi=300)
-        # plt.clf()
-        # for place in places:
-        #     plt.plot(places[place]['y'], places[place]['x'], label=place)
-        #     plt.savefig(f'Скорость добычи {place}.png', dpi=300)
-        #     plt.clf()
+        try:
+            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x, self.log_k)))
+            plt.savefig('Процент добычи.png', dpi=300)
+            plt.clf()
+            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: 1-x, self.log_k)))
+            plt.savefig('Процент вскрыши.png', dpi=300)
+            plt.clf()
+            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x/(1-x) if 1-x != 0 else -1, self.log_k)))
+            plt.savefig('Коэффициент добычи.png', dpi=300)
+            plt.clf()
+            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: (1-x)/x if x != 0 else -1, self.log_k)))
+            plt.savefig('Коэффициент вскрыши.png', dpi=300)
+            plt.clf()
+            plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
+            plt.savefig('Общая скорость добычи.png', dpi=300)
+            plt.clf()
+            # places = {}
+            # for year, place in self.log_places:
+            #     if place not in places:
+            #         places[place] = {'x': [], 'y': []}
+            #     places[place]['x'].append(self.log_places[year, place])
+            #     places[place]['y'].append(len(places[place]['x']))
+            # for place in places:
+            #     plt.plot(places[place]['y'], places[place]['x'], label=place)
+            # plt.savefig(f'Скорость добычи по участкам.png', dpi=300)
+            # plt.clf()
+            # for place in places:
+            #     plt.plot(places[place]['y'], places[place]['x'], label=place)
+            #     plt.savefig(f'Скорость добычи {place}.png', dpi=300)
+            #     plt.clf()
+        except Exception as e:
+            self.log(1, 'Не удалось сохранить графики')
         self.wb = opx.Workbook()
         self.ws = self.wb.active
 

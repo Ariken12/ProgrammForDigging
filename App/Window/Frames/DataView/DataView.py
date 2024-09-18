@@ -113,20 +113,20 @@ class DataView(tk.Frame):
 
     def init(self):
         career_name, places, ore_types = self.core.data_get_meta()
+        components = self.core.data.components_types
 
         self.frame_parameters_ores.set_headers(ore_types)
         self.amount_of_ore.set_headers(ore_types)
         # self.amount_of_horizonts.set_headers(places)
 
         self.frame_input_parameters.set_places(list(places.keys()))
-        self.frame_input_parameters.set_components(COMPONENTS)
+        self.frame_input_parameters.set_components(components)
 
         first_date = f'{dt.today().date()}'
         dates = {first_date: {}}
         for place in places:
             dates[first_date][place] = []
         self.core.set(dates=dates)
-        self.core.set(component_types=COMPONENTS)
 
         self.listbox_places['state'] = tk.NORMAL
         self.listbox_places.delete(0, tk.END)

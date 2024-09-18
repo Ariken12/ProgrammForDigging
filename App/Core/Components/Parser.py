@@ -1,8 +1,9 @@
 import openpyxl as pyxl
-
+import Core.Core as Core
 class Parser:
-    def __init__(self, core):
+    def __init__(self, core: Core):
         self.core = core
+        self.data = self.core.data
 
     def __call__(self, filename):
         self.data = self.core.data
@@ -12,16 +13,29 @@ class Parser:
             yield -1
         worksheet = workbook[workbook.sheetnames[0]]
         self.data.table.clear()
+        components = []
+        for i in range(7, worksheet.max_column+1):
+            cell = worksheet.cell(1, i).value
+            if cell is not None:
+                components.append(cell.split(',')[0])
+        self.data.components_types = tuple(components)
         array = []
         last_horizont = 10 ** 9
         last_namespace = ''
         for row in range(2, worksheet.max_row+2):
             array.clear()
             self.data.table.append([])
-            for column in range(1, worksheet.max_column+1):
+            for column in range(1, 6+len(components)+1):
                 cell = worksheet.cell(row, column).value
+                if (column == 1) and (cell is None):
+                    break
+                if cell is None:
+                    cell = 0
                 array.append(cell)
                 self.data.table[row-2].append(cell)
+            if len(array) != 6+len(components):
+                self.data.table.pop()
+                continue
             nameplace = array[0]
             if nameplace not in self.data.places:
                 self.data.places[nameplace] = []
