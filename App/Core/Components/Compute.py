@@ -87,7 +87,7 @@ class Compute:
         self.k_variants = {}
         self.calculate_k_for_plans()
         self.curr_k = 0
-        self.choosen_variant = ()
+        self.choosen_variant = self.variants[-1]
         self.choose_variant()
         self.update_plan()
         self.update_remains()
@@ -159,7 +159,7 @@ class Compute:
             if self.variants[variant] > max_speed:
                 max_speed = self.variants[variant]
         for variant in self.variants:
-            if self.variants[variant] != max_speed:
+            if not max_speed - EPSILON < self.variants[variant] < max_speed + EPSILON:
                 continue
             if self.k_variants[variant] > self.curr_k:
                 self.curr_k = self.k_variants[variant]
