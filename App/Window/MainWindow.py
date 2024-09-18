@@ -1,8 +1,6 @@
 import tkinter as tk
 import Window.Frames as f
 
-name = 'Участок'
-data = 'Вскрыша_1 Вскрыша_2 Вскрыша_3 Вскрыша_4 Вскрыша_5 Руда_сорт_1 Руда_сорт_2 Руда_сорт_3 Руда_сорт_4 Руда_сорт_5'
 
 
 class MainWindow(tk.Tk):
