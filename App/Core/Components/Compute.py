@@ -239,7 +239,7 @@ class Compute:
                         # ----------logging-------------
                         if ore not in self.log_ores[new_date, place]:
                             self.log_ores[new_date, place][ore] = 0
-                        self.log_ores[new_date, place][ore] += self.remains[place][horizont]['ORE'][ore]['M'] * k
+                        self.log_ores[new_date, place][ore] = self.remains[place][horizont]['ORE'][ore]['M']
                         self.log_components[new_date, place] = components
                         # ------------------------------
                     i_layer += 1
@@ -262,11 +262,11 @@ class Compute:
                     continue
                 self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
                 self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
-                self.remains[place][horizont]['SUMM']['COMPONENTS'] -= self.remains[place][horizont]['SUMM']['COMPONENTS'] * k
+                self.remains[place][horizont]['SUMM']['COMPONENTS'] = self.remains[place][horizont]['SUMM']['COMPONENTS']
                 for ore in self.remains[place][horizont]['ORE']:
                     self.remains[place][horizont]['ORE'][ore]['V'] -= self.remains[place][horizont]['ORE'][ore]['V'] * k
                     self.remains[place][horizont]['ORE'][ore]['M'] -= self.remains[place][horizont]['ORE'][ore]['M'] * k
-                    self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] -= self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * k
+                    self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] = self.remains[place][horizont]['ORE'][ore]['COMPONENTS']
                 i_layer += 1
 
     def write_output(self):
