@@ -101,6 +101,7 @@ class InputParametersFrame(ttk.LabelFrame):
         for i in range(num_of_places):
             self.labels_max_depth.append(tk.Label(self, text=places[i]))
             self.entrys_max_depth.append(tk.Entry(self, width=10))
+            self.entrys_max_depth[-1].insert(0, '0')
         self._pack()
 
     def set_components(self, components):
@@ -112,6 +113,7 @@ class InputParametersFrame(ttk.LabelFrame):
         for i in range(num_of_components):
             self.labels_components.append(tk.Label(self, text=components[i]))
             self.entrys_components.append(tk.Entry(self, width=10))
+            self.entrys_components[-1].insert(0, '0')
         self._pack()
 
     def get_parameters(self):
@@ -121,10 +123,16 @@ class InputParametersFrame(ttk.LabelFrame):
             output['acceleration'].append(float(entry.get()))
         output['max_dh'] = {}
         for i, entry in enumerate(self.entrys_max_depth):
-            output['max_dh'][self.labels_max_depth[i]['text']] = float(entry.get())
+            value = entry.get()
+            if value == '':
+                value = 0
+            output['max_dh'][self.labels_max_depth[i]['text']] = float(value)
         output['components_lim'] = []
         for entry in self.entrys_components:
-            output['components_lim'].append(float(entry.get()))
+            value = entry.get()
+            if value == '':
+                value = 0
+            output['components_lim'].append(float(value))
         output['begin_date'] = self.entry_started_date.get()
         output['step_date'] = self.combobox_precision_date.get()
         output['k_func'] = self.combobox_precision_value.get()

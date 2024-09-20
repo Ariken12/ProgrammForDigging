@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 import sys
 from datetime import datetime as dt
+import numpy as np
+
 
 from Window.Frames.DataView.Constants import *
 from Window.Frames.CustomWidgets.ParametersFrame import ParametersFrame
@@ -17,7 +19,7 @@ class DataView(tk.Frame):
         self.frame_input_parameters = InputParametersFrame(self)
         self.top_panel = tk.Frame(self)
         self.frame_parameters_ores = ParametersFrame(self.top_panel, headers=self.ore_types, variants=PARAMETERS_1, text="Руды/Вскрыша")
-        self.frame_parameters_components = ParametersFrame(self.top_panel, headers=COMPONENTS, variants=PARAMETERS_2, text="Единицы измерения")
+        self.frame_parameters_components = ParametersFrame(self.top_panel, headers=self.core.data.components_types, variants=PARAMETERS_2, text="Единицы измерения")
         
         self.label_calendar = tk.Label(self, text=CALENDAR_HEADER, justify=tk.CENTER, relief=tk.RAISED, width=10)
         self.label_calendar_choosen = tk.Label(self, text='', justify=tk.CENTER, relief=tk.RIDGE, width=10)
@@ -28,10 +30,10 @@ class DataView(tk.Frame):
         self.listbox_places = tk.Listbox(self, listvariable=(), selectmode=tk.SINGLE, height=TABLE_HEIGHT, justify=tk.CENTER, width=10)
         self.listbox_places['state'] = tk.DISABLED
 
-        self.treeview_horizonts = ttk.Treeview(self, columns=CARREER_HORIZONTS, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
-        self._initialization_treeview(self.treeview_horizonts, CARREER_HORIZONTS)
+        self.treeview_horizonts = ttk.Treeview(self, columns=self.core.data.components_types, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
+        self._initialization_treeview()
 
-        self.amount_of_component = AmountFrame(self, headers=COMPONENTS, readonly=True, text='Средневзвешенное по плану')
+        self.amount_of_component = AmountFrame(self, headers=self.core.data.components_types, readonly=True, text='Средневзвешенное по плану')
         self.amount_of_ore = AmountFrame(self, headers=self.ore_types, text='Сумма руды по плану')
         #self.amount_of_horizonts = AmountFrame(self, headers=('Участок 1',), text='Максимум горизонтов')
         self.button_recalculate = tk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
@@ -89,6 +91,14 @@ class DataView(tk.Frame):
         self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
         plan = self.core[date][place]
         for item in plan:
+            item = list(item)
+            for i, value in enumerate(item):
+                if 1 < i < 4:
+                    item[i] = int(value)
+                elif i == 4:
+                    item[i] = round(value, 6)
+                elif i > 4:
+                    item[i] = round(value, 3)
             self._treeview_append(item)
 
     def _recalculate_values(self):
@@ -103,10 +113,16 @@ class DataView(tk.Frame):
             self._treeview_append(item)
         self.amount_of_component.set_values(self.core.data.components[date][place])
 
-    def _initialization_treeview(self, treeview: ttk.Treeview, init_list: list[tuple[str, int]]):
-        for i in range(len(init_list)):
-            treeview.heading(i, text=init_list[i][0])
-            treeview.column(i, minwidth=init_list[i][1], width=init_list[i][1])
+    def _initialization_treeview(self):
+        components = self.core.data.components_types
+        self.treeview_horizonts['columns'] = CARREER_HORIZONTS + tuple(components)
+        for i, (text, width) in enumerate(CARREER_HORIZONTS):
+            self.treeview_horizonts.heading(i, text=text)
+            self.treeview_horizonts.column(i, minwidth=width, width=width)
+        for i in range(len(components)):
+            width = 430 // len(components)
+            self.treeview_horizonts.heading(i+len(CARREER_HORIZONTS), text=components[i])
+            self.treeview_horizonts.column(i+len(CARREER_HORIZONTS), minwidth=width, width=width)
 
     def _treeview_append(self, item):
         self.treeview_horizonts.insert("", tk.END, values=item)
@@ -114,6 +130,11 @@ class DataView(tk.Frame):
     def init(self):
         career_name, places, ore_types = self.core.data_get_meta()
         components = self.core.data.components_types
+
+        self.amount_of_component.set_headers(components)
+        self.frame_parameters_components.set_headers(components)
+
+        self._initialization_treeview()
 
         self.frame_parameters_ores.set_headers(ore_types)
         self.amount_of_ore.set_headers(ore_types)

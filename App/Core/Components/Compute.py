@@ -9,7 +9,8 @@ import openpyxl as opx
 
 
 
-EPSILON = 10 ** -3
+EPSILON = 10 ** -6
+ABSOLUT_MAX = 10 ** 6
 
 
 class Compute:
@@ -26,6 +27,7 @@ class Compute:
         self.log_ores = {}
         self.log_components = {}
         self.log_places = {}
+        self.log_stripping_ratio = []
         self.speed = 0
 
 
@@ -63,7 +65,7 @@ class Compute:
             except Exception as e:
                 self.ok = False
                 self.log(3, f'Ошибка в вычислениях: {type(e)}: {e}')
-                break
+                raise e
             print(self.choosen_variant)
             if i_speed != end_i_speed:
                 i_speed += 1
@@ -85,9 +87,10 @@ class Compute:
         self.variants = {}
         self.collect_plan_variants(0, 0)
         self.k_variants = {}
+        self.sr_variants = {}
         self.calculate_k_for_plans()
         self.curr_k = 0
-        self.choosen_variant = self.variants[-1]
+        self.choosen_variant =tuple(self.variants)[-1]
         self.choose_variant()
         self.update_plan()
         self.update_remains()
@@ -152,6 +155,7 @@ class Compute:
             if (v_usefull == v_useless == m_usefull == m_useless == 0):
                 continue
             self.k_variants[variant] = self.k_calculate(v_usefull, m_usefull, v_usefull+v_useless, m_usefull+m_useless)
+            self.sr_variants[variant] = self.stripping_ratio_calculate(v_usefull, m_usefull, v_useless, m_useless)
 
     def choose_variant(self):
         max_speed = 0
@@ -181,6 +185,7 @@ class Compute:
         variant = self.choosen_variant
         self.log_speed.append(self.variants[variant])
         self.log_k.append(self.k_variants[variant])
+        self.log_stripping_ratio.append(self.sr_variants[variant])
         # -------------------------------
         for i_place, num_of_layers in enumerate(self.choosen_variant):
             place = self.place_names[i_place]
@@ -226,16 +231,16 @@ class Compute:
                         iter_mass += layers_by_time[i_layer]
                         layers_by_time[i_layer] = 0
                     for ore in self.remains[place][horizont]['ORE']:
-                        v = round(self.remains[place][horizont]['ORE'][ore]['V'] * k, 1)
-                        m = round(self.remains[place][horizont]['ORE'][ore]['M'] * k, 1)
-                        components = np.round(self.remains[place][horizont]['ORE'][ore]['COMPONENTS'], 3)
+                        v = self.remains[place][horizont]['ORE'][ore]['V'] * k
+                        m = self.remains[place][horizont]['ORE'][ore]['M'] * k
+                        components = self.remains[place][horizont]['ORE'][ore]['COMPONENTS']
                         plan_record = [horizont, ore, v, m] + list(components)
                         self.data.plan[new_date][place].append(tuple(plan_record))
                         # ----------logging-------------
                         if ore not in self.log_ores[new_date, place]:
                             self.log_ores[new_date, place][ore] = 0
                         self.log_ores[new_date, place][ore] += self.remains[place][horizont]['ORE'][ore]['M'] * k
-                        self.log_components[new_date, place] += components
+                        self.log_components[new_date, place] = components
                         # ------------------------------
                     i_layer += 1
 
@@ -266,16 +271,10 @@ class Compute:
 
     def write_output(self):
         try:
-            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x, self.log_k)))
-            plt.savefig('Процент добычи.png', dpi=300)
-            plt.clf()
-            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: 1-x, self.log_k)))
-            plt.savefig('Процент вскрыши.png', dpi=300)
-            plt.clf()
-            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: x/(1-x) if 1-x != 0 else -1, self.log_k)))
+            plt.plot(range(1, len(self.log_k)+1), list(self.log_k))
             plt.savefig('Коэффициент добычи.png', dpi=300)
             plt.clf()
-            plt.plot(range(1, len(self.log_k)+1), list(map(lambda x: (1-x)/x if x != 0 else -1, self.log_k)))
+            plt.plot(range(1, len(self.log_k)+1), list(self.log_stripping_ratio))
             plt.savefig('Коэффициент вскрыши.png', dpi=300)
             plt.clf()
             plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
@@ -314,14 +313,14 @@ class Compute:
                 for idata, data in enumerate(plan[year][place]):
                     if (year, place) not in self.log_places:
                         continue
-                    summ = round(self.log_speed[iyear // self.date_scale], 0)
-                    k_useless = round(self.log_k[iyear // self.date_scale], 3)
-                    summ_of_place = round(self.log_places[year, place], 0)
+                    summ = self.log_speed[iyear // self.date_scale]
+                    k_useless = self.log_k[iyear // self.date_scale]
+                    summ_of_place = self.log_places[year, place]
                     horizont = data[0]
                     ore_name = data[1]
-                    v_of_ore = round(data[2], 0)
-                    m_of_ore = round(data[3], 0)
-                    components = list(np.round(np.array(data[4:]), 3))
+                    v_of_ore = data[2]
+                    m_of_ore = data[3]
+                    components = list(data[4:])
                     output = [year, summ, k_useless, place, summ_of_place, horizont, ore_name, v_of_ore, m_of_ore] + components
                     self.ws.append(output)
         try:
@@ -334,6 +333,11 @@ class Compute:
             'M / M': lambda v_u, m_u, v_a, m_a: m_u / m_a, 
             'V / M': lambda v_u, m_u, v_a, m_a: v_u / m_a, 
             'V / V': lambda v_u, m_u, v_a, m_a: v_u / v_a
+        }[self.data.parameters['k_func']]
+        self.stripping_ratio_calculate = {
+            'M / M': lambda v_uf, m_uf, v_ul, m_ul: (m_ul / m_uf) if m_uf != 0 else 0, 
+            'V / M': lambda v_uf, m_uf, v_ul, m_ul: (v_ul / m_uf) if m_uf != 0 else 0, 
+            'V / V': lambda v_uf, m_uf, v_ul, m_ul: (v_ul / v_uf) if v_uf != 0 else 0
         }[self.data.parameters['k_func']]
         self.date_scale = {
             'Год': 1, 
@@ -348,6 +352,7 @@ class Compute:
         self.log_ores.clear()
         self.log_components.clear()
         self.log_places.clear()
+        self.log_stripping_ratio.clear()
         yield None 
     
     def load_remains(self):
