@@ -88,6 +88,7 @@ class Compute:
         self.collect_plan_variants(0, 0)
         self.k_variants = {}
         self.sr_variants = {}
+        self.usefull_useless_variants = {}
         self.calculate_k_for_plans()
         self.curr_k = 0
         self.choosen_variant =tuple(self.variants)[-1]
@@ -106,11 +107,10 @@ class Compute:
         if summ >= self.speed:
             return
         lim_layer = self.data.parameters['max_dh'][place]
-        for i, layer in enumerate(self.remains[place], 1):
+        for i, layer in enumerate(reversed(sorted(list(self.remains[place]))), 1):
             if i > lim_layer:
                 break
             next_m = self.remains[place][layer]['SUMM']['M']
-            summ_of_layer = self.all_resources[place][layer]['SUMM']['M']
             if summ + next_m > self.speed:
                 i = i + (self.speed - summ) / next_m - 1
                 summ = self.speed
@@ -132,12 +132,12 @@ class Compute:
                 place = self.place_names[i_place]
                 i_layer = 0
                 while i_layer < num_of_layers:
-                    horizont = tuple(self.remains[place])[i_layer]
+                    horizont = sorted(list(self.remains[place]))[-1-i_layer]
                     for ore in self.data.parameters['usefull_ores']:
                         usefull_flag = self.data.parameters['usefull_ores'][ore]
-                        if ore in self.all_resources[place][horizont]['ORE']:
-                            ore_v = self.all_resources[place][horizont]['ORE'][ore]['V']
-                            ore_m = self.all_resources[place][horizont]['ORE'][ore]['M']
+                        if ore in self.remains[place][horizont]['ORE']:
+                            ore_v = self.remains[place][horizont]['ORE'][ore]['V']
+                            ore_m = self.remains[place][horizont]['ORE'][ore]['M']
                         else:
                             ore_v = 0
                             ore_m = 0
@@ -156,6 +156,7 @@ class Compute:
                 continue
             self.k_variants[variant] = self.k_calculate(v_usefull, m_usefull, v_usefull+v_useless, m_usefull+m_useless)
             self.sr_variants[variant] = self.stripping_ratio_calculate(v_usefull, m_usefull, v_useless, m_useless)
+            self.usefull_useless_variants[variant] = (v_usefull, m_usefull, v_useless, m_useless)
 
     def choose_variant(self):
         max_speed = 0
@@ -186,12 +187,13 @@ class Compute:
         self.log_speed.append(self.variants[variant])
         self.log_k.append(self.k_variants[variant])
         self.log_stripping_ratio.append(self.sr_variants[variant])
+
         # -------------------------------
         for i_place, num_of_layers in enumerate(self.choosen_variant):
             place = self.place_names[i_place]
             summ = 0
             iter_mass = 0
-            horizonts = tuple(self.remains[place])
+            horizonts = sorted(list(self.remains[place]))
             layers_by_time = [self.remains[place][horizonts[i]]['SUMM']['M'] for i in range(int(num_of_layers))]
             if num_of_layers % 1 > 0:
                 layers_by_time.append(self.remains[place][horizonts[int(num_of_layers)]]['SUMM']['M'] * (num_of_layers % 1))
@@ -215,7 +217,7 @@ class Compute:
                 # ----------------------------
                 i_layer = 0
                 while iter_mass < summ-EPSILON:
-                    horizont = tuple(self.remains[place])[i_layer]
+                    horizont = sorted(list(self.remains[place]))[-1-i_layer]
                     if i_layer >= len(layers_by_time):
                         i_layer -= 1
                     if layers_by_time[i_layer] < EPSILON:
@@ -254,7 +256,7 @@ class Compute:
             while i_layer < num_of_layers:
                 if not self.remains[place]:
                     break
-                horizont = tuple(self.remains[place])[0]
+                horizont = sorted(list(self.remains[place]))[-1]
                 k = num_of_layers - i_layer
                 if k > 1:
                     self.remains[place].pop(horizont)
@@ -274,7 +276,7 @@ class Compute:
             plt.plot(range(1, len(self.log_k)+1), list(self.log_k))
             plt.savefig('Коэффициент добычи.png', dpi=300)
             plt.clf()
-            plt.plot(range(1, len(self.log_k)+1), list(self.log_stripping_ratio))
+            plt.plot(range(1, len(self.log_stripping_ratio)+1), list(self.log_stripping_ratio))
             plt.savefig('Коэффициент вскрыши.png', dpi=300)
             plt.clf()
             plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
@@ -381,7 +383,6 @@ class Compute:
             self.remains[place][horizont]['ORE'][type_of_ore]['M'] += m
             self.remains[place][horizont]['ORE'][type_of_ore]['COMPONENTS'] += components
             yield self.log(0, f'Загружена {type_of_ore} на {horizont} горизонте, на участке {place}')
-        self.all_resources = c.deepcopy(self.remains)
         yield self.log(4, 'Таблица руд загружена в вычислитель')
         yield None
 
