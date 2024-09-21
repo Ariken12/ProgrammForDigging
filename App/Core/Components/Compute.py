@@ -193,7 +193,7 @@ class Compute:
             place = self.place_names[i_place]
             summ = 0
             iter_mass = 0
-            horizonts = sorted(list(self.remains[place]))
+            horizonts = list(reversed(sorted(list(self.remains[place]))))
             layers_by_time = [self.remains[place][horizonts[i]]['SUMM']['M'] for i in range(int(num_of_layers))]
             if num_of_layers % 1 > 0:
                 layers_by_time.append(self.remains[place][horizonts[int(num_of_layers)]]['SUMM']['M'] * (num_of_layers % 1))
@@ -226,8 +226,8 @@ class Compute:
                         continue
                     elif layers_by_time[i_layer] > (summ - iter_mass):
                         k = (summ - iter_mass) / self.remains[place][horizont]['SUMM']['M']
-                        iter_mass = summ
                         layers_by_time[i_layer] -= summ - iter_mass
+                        iter_mass = summ
                     elif layers_by_time[i_layer] <= (summ - iter_mass):
                         k = layers_by_time[i_layer] / self.remains[place][horizont]['SUMM']['M']
                         iter_mass += layers_by_time[i_layer]
@@ -245,6 +245,7 @@ class Compute:
                         self.log_components[new_date, place] = components
                         # ------------------------------
                     i_layer += 1
+        print('test: ', summ_of_mass)
 
 
     def update_remains(self):
@@ -258,7 +259,7 @@ class Compute:
                     break
                 horizont = sorted(list(self.remains[place]))[-1]
                 k = num_of_layers - i_layer
-                if k > 1:
+                if k >= 1:
                     self.remains[place].pop(horizont)
                     i_layer += 1
                     continue
@@ -316,7 +317,7 @@ class Compute:
                     if (year, place) not in self.log_places:
                         continue
                     summ = self.log_speed[iyear // self.date_scale]
-                    k_useless = self.log_k[iyear // self.date_scale]
+                    k_useless = self.log_stripping_ratio[iyear // self.date_scale]
                     summ_of_place = self.log_places[year, place]
                     horizont = data[0]
                     ore_name = data[1]

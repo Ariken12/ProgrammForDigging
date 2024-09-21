@@ -39,7 +39,7 @@ class MainWindow(tk.Tk):
             # for entry in self.data_view.frame_input_parameters.entrys_acceleration + \
             #             self.data_view.frame_input_parameters.entrys_components + \
             #             self.data_view.frame_input_parameters.entrys_max_depth:
-            #     entry.insert(0, '1000')
+            #     entry.insert(0, '100000000')
             # self.data_view.frame_parameters_ores.variables[-1].set(1)
             # self.data_view.frame_parameters_ores.variables[-2].set(1)
             # self.data_view.frame_parameters_ores.variables[-3].set(1)
