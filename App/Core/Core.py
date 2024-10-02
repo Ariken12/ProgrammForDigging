@@ -10,7 +10,7 @@ class Core:
         self.compute = Compute(self)
         self.parser = Parser(self)
         self.dumper = Dumper(self)
-        self.serialize = Serializer(self)
+        self.serializer = Serializer(self)
 
     def clean(self):
         self.data = Data()

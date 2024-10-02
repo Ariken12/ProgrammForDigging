@@ -16,9 +16,7 @@ ABSOLUT_MAX = 10 ** 6
 class Compute:
     def __init__(self, core):
         self.core : Core.Core = core
-        self.data : Core.Data = core.data
         self.remains = {}
-        self.k_calculate = lambda v_u, m_u, v_a, m_a: 0
         self.date_scale = 1
         self.output = ['', '', '', '', '']
         self.log_variants = {}
@@ -30,8 +28,12 @@ class Compute:
         self.log_stripping_ratio = []
         self.speed = 0
 
+    @staticmethod
+    def k_calculate(v_u, m_u, v_a, m_a):
+        return 0
 
     def main_calculate(self):
+        self.data = self.core.data
         proc = self.load_parameters() 
         while (output := next(proc)):
             yield output

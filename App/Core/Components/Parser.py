@@ -6,7 +6,6 @@ MAX_H = 10 ** 9
 class Parser:
     def __init__(self, core: Core):
         self.core = core
-        self.data = self.core.data
 
     def __call__(self, filename):
         self.data = self.core.data
@@ -23,7 +22,7 @@ class Parser:
                 if ',' in cell:
                     components.append(cell.split(',')[0])
                 else:
-                    components(str(cell))
+                    components.append(str(cell))
         self.data.components_types = tuple(components)
         array = []
         self.last_horizont = MAX_H

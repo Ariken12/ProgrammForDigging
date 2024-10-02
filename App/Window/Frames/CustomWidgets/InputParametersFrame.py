@@ -90,6 +90,7 @@ class InputParametersFrame(ttk.LabelFrame):
         for i in range(int(num_of_years)):
             self.labels_acceleration.append(tk.Label(self, text=f'Год {i+1}'))
             self.entrys_acceleration.append(tk.Entry(self, width=10))
+            self.entrys_acceleration[-1].insert(0, '0')
         self._pack()
         
     def set_places(self, places):
@@ -136,4 +137,24 @@ class InputParametersFrame(ttk.LabelFrame):
         output['begin_date'] = self.entry_started_date.get()
         output['step_date'] = self.combobox_precision_date.get()
         output['k_func'] = self.combobox_precision_value.get()
+        output['max_k'] = self.entry_k_lim.get()
         return output
+    
+    def set_parameters(self, **kwargs):
+        self.spinbox_acceleration.set(len(kwargs['acceleration']))
+        self.__spinbox_acceleration_handler()
+        for i, entry in enumerate(self.entrys_acceleration):
+            entry.delete(0, tk.END)
+            entry.insert(0, kwargs['acceleration'][i])
+        for i, entry in enumerate(self.entrys_max_depth):
+            entry.delete(0, tk.END)
+            entry.insert(0, kwargs['max_dh'][self.labels_max_depth[i]['text']])
+        for i, entry in enumerate(self.entrys_components):
+            entry.delete(0, tk.END)
+            entry.insert(0, kwargs['components_lim'][i])
+        self.entry_started_date.delete(0, tk.END)
+        self.entry_started_date.insert(0, kwargs['begin_date'])
+        self.combobox_precision_date.set(kwargs['step_date'])
+        self.combobox_precision_value.set(kwargs['k_func'])
+        self.entry_k_lim.delete(0, tk.END)
+        self.entry_k_lim.insert(0, kwargs['max_k'])
