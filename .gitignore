@@ -165,3 +165,6 @@ doc/
 *.png
 *.xlsx
 *.xlsx#
+test*
+*.pkl 
+*.pklcore
