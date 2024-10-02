@@ -83,7 +83,7 @@ class Compute:
         yield None
 
     def calculate_carreer_digging(self):
-        self.place_names = tuple(self.data.places.keys())
+        self.place_names = self.data.places
         self.variants = {}
         self.collect_plan_variants(0, 0)
         self.k_variants = {}

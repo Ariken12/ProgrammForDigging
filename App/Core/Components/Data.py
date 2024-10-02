@@ -12,20 +12,7 @@ struct = {
 
 class Data:
     def __init__(self):
-        self.table = []
-        self.name_space = ''
-        self.ore_types = []
-        self.components_types = []
-        self.horizont_size = 0
-        self.max_horizont = 0
-        self.data = None
-        self.places = {}
-        '''{'place': [row1, row2, ...]}'''
-        self.components = {'date': {'place': ['component1', ...]}}
-        '''{'date': {'place': ['component1', ...]}}'''
-        self.plan = {'date': {'place': [('horizonts', 'ores'), ...]}}
-        self.resources_for_plan = {'date': {'place': ['ore_1', 'ore_2']}}
-        self.parameters = {}
+        self.clear()
 
     def get_meta(self):
         return self.name_space, self.places, self.ore_types
@@ -78,3 +65,31 @@ class Data:
 
     def clear_resources(self):
         pass
+
+    def clear(self):
+        self.table = []
+        self.name_space = ''
+        self.ore_types = []
+        self.horizont_size = 0
+        self.max_horizont = 0
+        self.data = None
+        self.components_types = []
+        '''("component1", "component2", "component3", ...)'''
+        self.places = []
+        '''("place1", "place2", "place3", ...)'''
+        self.components = {'date': {'place': ['component1', ...]}}
+        '''{'date': {'place': ['component1', ...]}}'''
+        self.resources_for_plan = {'date': {'place': ['ore_1', 'ore_2']}}
+        self.plan = {'date': {'place': [('horizonts', 'ores'), ...]}}
+        self.parameters = {}
+        self.meta = {
+            'places': {
+
+            },
+            'components': {
+
+            },
+            'ores': {
+                
+            }
+        }

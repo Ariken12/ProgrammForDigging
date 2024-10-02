@@ -1,9 +1,9 @@
-from Window.Frames.ParseFile import ParseFile as PS
-from Window.Frames.DataView import DataView as DV
+from Window.Frames.ParseFileFrame import ParseFileFrame as PS
+from Window.Frames.DataViewFrame import DataViewFrame as DV
 
 
-ParseFile = PS.ParseFile
-DataView = DV.DataView
+ParseFile = PS.ParseFileFrame
+DataView = DV.DataViewFrame
 
 
 __all__ = ['ParseFile']

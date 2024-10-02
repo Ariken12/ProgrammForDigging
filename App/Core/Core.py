@@ -1,13 +1,16 @@
 from Core.Components.Data import Data
 from Core.Components.Compute import Compute
 from Core.Components.Parser import Parser
-
+from Core.Components.Dumper import Dumper
+from Core.Components.Serializer import Serializer
 
 class Core:
     def __init__(self):
         self.data = Data()
         self.compute = Compute(self)
         self.parser = Parser(self)
+        self.dumper = Dumper(self)
+        self.serialize = Serializer(self)
 
     def clean(self):
         self.data = Data()
