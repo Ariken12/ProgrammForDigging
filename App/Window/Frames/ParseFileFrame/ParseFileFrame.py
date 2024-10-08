@@ -143,6 +143,9 @@ class ParseFileFrame(tk.Frame):
         self.__init_treeview()
         self._fill_table()
 
+    @staticmethod
+    def fast_format(x): return ' '.join([''.join(reversed(str(int(x))))[i:i+3] for i in range(0, len(str(int(x))), 3)])[::-1]
+
     def __update_states(self):
         self.entry_name_space.delete(0, tk.END)
         self.entry_name_space.insert(0, self.data.name_space)
@@ -151,11 +154,11 @@ class ParseFileFrame(tk.Frame):
         for place in self.data.meta['places']:
             data = self.data.meta['places'][place]
             self.text_places.insert(tk.END, f'{place}:\n')
-            self.text_places.insert(tk.END, f'  Мин. гор.: {data['MIN_H']}\n')
-            self.text_places.insert(tk.END, f'  Макс. гор.: {data['MAX_H']}\n')
-            self.text_places.insert(tk.END, f'  Шаг гор.: {data['STEP_H']}\n')
-            self.text_places.insert(tk.END, f'  Обьем: {data['V']}\n')
-            self.text_places.insert(tk.END, f'  Масса: {data['M']}\n')
+            self.text_places.insert(tk.END, f'  Макс. гор.: {data["MAX_H"]}\n')
+            self.text_places.insert(tk.END, f'  Мин. гор.: {data["MIN_H"]}\n')
+            self.text_places.insert(tk.END, f'  Шаг гор.: {data["STEP_H"]}\n')
+            self.text_places.insert(tk.END, f'  Обьем: {self.fast_format(data["V"])}\n')
+            self.text_places.insert(tk.END, f'  Масса: {self.fast_format(data["M"])}\n')
             self.text_places.insert(tk.END, f'\n')
         self.text_places['state'] = tk.DISABLED
         self.text_ore_types['state'] = tk.NORMAL
@@ -163,8 +166,8 @@ class ParseFileFrame(tk.Frame):
         for ore in self.data.meta['ores']:
             data = self.data.meta['ores'][ore]
             self.text_ore_types.insert(tk.END, f'{ore}:\n')
-            self.text_ore_types.insert(tk.END, f'  Обьем: {data['V']}\n')
-            self.text_ore_types.insert(tk.END, f'  Масса: {data['M']}\n')
+            self.text_ore_types.insert(tk.END, f'  Обьем: {self.fast_format(data["V"])}\n')
+            self.text_ore_types.insert(tk.END, f'  Масса: {self.fast_format(data["M"])}\n')
             self.text_places.insert(tk.END, f'\n')
         self.text_ore_types['state'] = tk.DISABLED
         self.text_components['state'] = tk.NORMAL
@@ -172,7 +175,7 @@ class ParseFileFrame(tk.Frame):
         for ore in self.data.meta['components']:
             data = self.data.meta['components'][ore]
             self.text_components.insert(tk.END, f'{ore}:\n')
-            self.text_components.insert(tk.END, f'  Масса: {data}\n')
+            self.text_components.insert(tk.END, f'  Масса: {self.fast_format(data)}\n')
             self.text_places.insert(tk.END, f'\n')
         self.text_components['state'] = tk.DISABLED
 

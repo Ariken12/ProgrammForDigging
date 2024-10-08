@@ -194,7 +194,8 @@ class DataViewFrame(tk.Frame):
             self.__parameters_from_core()
             self.__plan_from_core()
         except Exception as e:
-            self.set_log(f'{type(e)}: {e}')
+            self.set_log(f'{type(e)}\n{e}')
+            raise e
         finally:
             self.set_frame_state(tk.NORMAL)
 
@@ -211,6 +212,7 @@ class DataViewFrame(tk.Frame):
         self.set_frame_state(tk.NORMAL)
 
     def __parameters_to_core(self):
+        self.core.data.name_space = self.entry_title.get()
         parameters = self.frame_input_parameters.get_parameters()
         parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
         parameters['measure_count'] = self.frame_parameters_components.get_all()

@@ -19,10 +19,7 @@ class Parser:
         for i in range(7, worksheet.max_column+1):
             cell = worksheet.cell(1, i).value
             if cell is not None:
-                if ',' in cell:
-                    components.append(cell.split(',')[0])
-                else:
-                    components.append(str(cell))
+                components.append(str(cell))
         self.data.components_types = tuple(components)
         array = []
         self.last_horizont = MAX_H
@@ -53,7 +50,7 @@ class Parser:
                 if (err := self.check_components(component, array[6+i]) is not None):
                     yield err
 
-            yield int(row * 100 / (worksheet.max_row-1))
+            yield int(row * 100 / (worksheet.max_row+1))
         while True:
             yield 100
         

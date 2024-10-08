@@ -301,14 +301,14 @@ class Compute:
             #     plt.clf()
         except Exception as e:
             self.log(1, 'Не удалось сохранить графики')
-        self.wb = opx.Workbook()
-        self.ws = self.wb.active
+        wb = opx.Workbook()
+        ws = wb.active
 
         output = ['Год', 'Сумма за год', 'Коэффициент вскрыши', 'Участок', 'Сумма на участке', 'Горизонт', \
                   'Наименование руды', 'Обьем руды', 'Масса руды'] + list(self.data.components_types)
         for col in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-            self.ws.column_dimensions[col].width = 15
-        self.ws.append(output)
+            ws.column_dimensions[col].width = 15
+        ws.append(output)
 
         plan = self.data.plan
         years = [year for year in tuple(plan)[1:]]
@@ -327,22 +327,40 @@ class Compute:
                     m_of_ore = data[3]
                     components = list(data[4:])
                     output = [year, summ, k_useless, place, summ_of_place, horizont, ore_name, v_of_ore, m_of_ore] + components
-                    self.ws.append(output)
+                    ws.append(output)
         try:
-            self.wb.save('План горных работ.xlsx')
+            wb.save('План горных работ.xlsx')
         except Exception as e:
             self.log(2, 'Ошибка записи Excel файла')
 
+    @staticmethod
+    def m2m(v_u, m_u, v_a, m_a): return m_u / m_a
+    
+    @staticmethod
+    def v2m(v_u, m_u, v_a, m_a): return v_u / m_a
+    
+    @staticmethod
+    def v2v(v_u, m_u, v_a, m_a): return v_u / v_a
+
+    @staticmethod
+    def mm(v_uf, m_uf, v_ul, m_ul): return (m_ul / m_uf) if m_uf != 0 else 0
+    
+    @staticmethod
+    def vm(v_uf, m_uf, v_ul, m_ul): return (v_ul / m_uf) if m_uf != 0 else 0
+    
+    @staticmethod
+    def vv(v_uf, m_uf, v_ul, m_ul): return (v_ul / v_uf) if v_uf != 0 else 0
+    
     def load_parameters(self):
         self.k_calculate = {
-            'M / M': lambda v_u, m_u, v_a, m_a: m_u / m_a, 
-            'V / M': lambda v_u, m_u, v_a, m_a: v_u / m_a, 
-            'V / V': lambda v_u, m_u, v_a, m_a: v_u / v_a
+            'M / M': self.m2m, 
+            'V / M': self.v2m, 
+            'V / V': self.v2v
         }[self.data.parameters['k_func']]
         self.stripping_ratio_calculate = {
-            'M / M': lambda v_uf, m_uf, v_ul, m_ul: (m_ul / m_uf) if m_uf != 0 else 0, 
-            'V / M': lambda v_uf, m_uf, v_ul, m_ul: (v_ul / m_uf) if m_uf != 0 else 0, 
-            'V / V': lambda v_uf, m_uf, v_ul, m_ul: (v_ul / v_uf) if v_uf != 0 else 0
+            'M / M': self.mm, 
+            'V / M': self.vm, 
+            'V / V': self.vv
         }[self.data.parameters['k_func']]
         self.date_scale = {
             'Год': 1, 

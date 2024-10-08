@@ -6,10 +6,10 @@ PyInstaller.__main__.run([
     '--windowed',
     '--clean'
 ])
-PyInstaller.__main__.run([
-    '.\\Installer\\installer.py',
-    '--onefile',
-    '--windowed',
-    '--clean',
-    '--uac-admin'
-])
+# PyInstaller.__main__.run([
+#     '.\\Installer\\installer.py',
+#     '--onefile',
+#     '--windowed',
+#     '--clean',
+#     '--uac-admin'
+# ])
