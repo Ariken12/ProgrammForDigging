@@ -20,6 +20,8 @@ class A:
         self.f = B(self)
 
 var = A()
+var.b = 333
+var.f.a = 111
 
 with open('test.pkl', 'wb') as file:
     pickle.dump(var, file, protocol=5)

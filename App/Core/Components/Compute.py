@@ -33,7 +33,6 @@ class Compute:
         return 0
 
     def main_calculate(self):
-        self.data = self.core.data
         proc = self.load_parameters() 
         while (output := next(proc)):
             yield output
@@ -47,15 +46,15 @@ class Compute:
 
     def calculate_years(self):
         yield self.log(4, 'Рассчет плана')
-        acceleration = self.data.parameters['acceleration']
+        acceleration = self.core['parameters']['acceleration']
         self.speed = acceleration[0]
         i_speed = 0
         end_i_speed = len(acceleration) - 1
         self.year = 0
-        self.data.plan = {}
-        self.data.plan[self.data.parameters['begin_date']] = {}
+        self.core['plan'] = {}
+        self.core['plan'][self.core['parameters']['begin_date']] = {}
         for place in self.remains:
-            self.data.plan[self.data.parameters['begin_date']][place] = []
+            self.core['plan'][self.core['parameters']['begin_date']][place] = []
         self.log(0, f'Год {self.year}')
         self.ok = True
         yield self.log(1, f'Скорость {self.speed}')
@@ -85,7 +84,6 @@ class Compute:
         yield None
 
     def calculate_carreer_digging(self):
-        self.place_names = self.data.places
         self.variants = {}
         self.collect_plan_variants(0, 0)
         self.k_variants = {}
@@ -93,7 +91,7 @@ class Compute:
         self.usefull_useless_variants = {}
         self.calculate_k_for_plans()
         self.curr_k = 0
-        self.choosen_variant =tuple(self.variants)[-1]
+        self.choosen_variant = tuple(self.variants)[-1]
         self.choose_variant()
         self.update_plan()
         self.update_remains()
@@ -108,7 +106,7 @@ class Compute:
         self.collect_plan_variants(num+1, summ, var+(0,))
         if summ >= self.speed:
             return
-        lim_layer = self.data.parameters['max_dh'][place]
+        lim_layer = self.core['parameters']['max_dh'][place]
         for i, layer in enumerate(reversed(sorted(list(self.remains[place]))), 1):
             if i > lim_layer:
                 break
@@ -135,8 +133,8 @@ class Compute:
                 i_layer = 0
                 while i_layer < num_of_layers:
                     horizont = sorted(list(self.remains[place]))[-1-i_layer]
-                    for ore in self.data.parameters['usefull_ores']:
-                        usefull_flag = self.data.parameters['usefull_ores'][ore]
+                    for ore in self.core['parameters']['usefull_ores']:
+                        usefull_flag = self.core['parameters']['usefull_ores'][ore]
                         if ore in self.remains[place][horizont]['ORE']:
                             ore_v = self.remains[place][horizont]['ORE'][ore]['V']
                             ore_m = self.remains[place][horizont]['ORE'][ore]['M']
@@ -155,9 +153,11 @@ class Compute:
                             m_useless += ore_m
                     i_layer += 1
             if (v_usefull == v_useless == m_usefull == m_useless == 0):
-                continue
-            self.k_variants[variant] = self.k_calculate(v_usefull, m_usefull, v_usefull+v_useless, m_usefull+m_useless)
-            self.sr_variants[variant] = self.stripping_ratio_calculate(v_usefull, m_usefull, v_useless, m_useless)
+                self.k_variants[variant] = float('-inf')
+                self.sr_variants[variant] = float('-inf')
+            else:
+                self.k_variants[variant] = self.k_calculate(v_usefull, m_usefull, v_usefull+v_useless, m_usefull+m_useless)
+                self.sr_variants[variant] = self.stripping_ratio_calculate(v_usefull, m_usefull, v_useless, m_useless)
             self.usefull_useless_variants[variant] = (v_usefull, m_usefull, v_useless, m_useless)
 
     def choose_variant(self):
@@ -182,7 +182,7 @@ class Compute:
             12: relativedelta(months=1),
             53: relativedelta(weeks=1),
         }
-        date_start = tuple(self.data.plan)[-1]
+        date_start = tuple(self.core['plan'])[-1]
         timedelta = DELTAS[self.date_scale]
         # ------------logging-------------------
         variant = self.choosen_variant
@@ -203,10 +203,10 @@ class Compute:
             for i_date in range(1, self.date_scale+1):
                 new_date = str((dt.datetime.strptime(date_start, "%Y-%m-%d") + timedelta * i_date).date())
                 summ = summ_of_mass / self.date_scale * i_date
-                if new_date not in self.data.plan:
-                    self.data.plan[new_date] = {}
-                if place not in self.data.plan[new_date]:
-                    self.data.plan[new_date][place] = []    
+                if new_date not in self.core['plan']:
+                    self.core['plan'][new_date] = {}
+                if place not in self.core['plan'][new_date]:
+                    self.core['plan'][new_date][place] = []    
                 # --------optimization--------
                 if not summ:
                     continue
@@ -214,7 +214,7 @@ class Compute:
                 # ----------logging-----------
                 self.log_variants[new_date, place] = num_of_layers
                 self.log_ores[new_date, place] = {}
-                self.log_components[new_date, place] = np.zeros(len(self.data.components_types))
+                self.log_components[new_date, place] = np.zeros(len(self.core['component_types']))
                 self.log_places[new_date, place] = summ
                 # ----------------------------
                 i_layer = 0
@@ -239,7 +239,7 @@ class Compute:
                         m = self.remains[place][horizont]['ORE'][ore]['M'] * k
                         components = self.remains[place][horizont]['ORE'][ore]['COMPONENTS']
                         plan_record = [horizont, ore, v, m] + list(components)
-                        self.data.plan[new_date][place].append(tuple(plan_record))
+                        self.core['plan'][new_date][place].append(tuple(plan_record))
                         # ----------logging-------------
                         if ore not in self.log_ores[new_date, place]:
                             self.log_ores[new_date, place][ore] = 0
@@ -305,12 +305,12 @@ class Compute:
         ws = wb.active
 
         output = ['Год', 'Сумма за год', 'Коэффициент вскрыши', 'Участок', 'Сумма на участке', 'Горизонт', \
-                  'Наименование руды', 'Обьем руды', 'Масса руды'] + list(self.data.components_types)
+                  'Наименование руды', 'Обьем руды', 'Масса руды'] + list(self.core['component_types'])
         for col in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             ws.column_dimensions[col].width = 15
         ws.append(output)
 
-        plan = self.data.plan
+        plan = self.core['plan']
         years = [year for year in tuple(plan)[1:]]
         for iyear, year in enumerate(years):
             places = tuple(plan[year])
@@ -352,23 +352,24 @@ class Compute:
     def vv(v_uf, m_uf, v_ul, m_ul): return (v_ul / v_uf) if v_uf != 0 else 0
     
     def load_parameters(self):
+        self.place_names = self.core['places']
         self.k_calculate = {
             'M / M': self.m2m, 
             'V / M': self.v2m, 
             'V / V': self.v2v
-        }[self.data.parameters['k_func']]
+        }[self.core['parameters']['k_func']]
         self.stripping_ratio_calculate = {
             'M / M': self.mm, 
             'V / M': self.vm, 
             'V / V': self.vv
-        }[self.data.parameters['k_func']]
+        }[self.core['parameters']['k_func']]
         self.date_scale = {
             'Год': 1, 
             'Полугодие': 2, 
             'Квартал': 4, 
             'Месяц': 12, 
             'Неделя': 53
-        }[self.data.parameters['step_date']]
+        }[self.core['parameters']['step_date']]
         self.log_variants.clear()
         self.log_k.clear()
         self.log_speed.clear()
@@ -380,7 +381,7 @@ class Compute:
     
     def load_remains(self):
         yield self.log(4, 'Загрузка руд в вычислитель')
-        for row in self.data.table:
+        for row in self.core['table']:
             place = row[0]
             horizont = row[1]
             type_of_ore = row[2]
@@ -392,11 +393,11 @@ class Compute:
             if horizont not in self.remains[place]:
                 self.remains[place][horizont] = {
                     'SUMM': 
-                        {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.data.components_types),))}, 
+                        {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.core['component_types']),))}, 
                     'ORE':
                         {}}
             if type_of_ore not in self.remains[place][horizont]['ORE']:
-                self.remains[place][horizont]['ORE'][type_of_ore] = {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.data.components_types),))}
+                self.remains[place][horizont]['ORE'][type_of_ore] = {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.core['component_types']),))}
             self.remains[place][horizont]['SUMM']['V'] += v
             self.remains[place][horizont]['SUMM']['M'] += m
             self.remains[place][horizont]['SUMM']['COMPONENTS'] += components
@@ -413,44 +414,6 @@ class Compute:
             for horizont in self.remains[place]:
                 M += self.remains[place][horizont]['SUMM']['M']
         return M
-
-    
-    def calculate_places(self):
-        resources = self.data.resources_for_plan
-        self.data.clear_dates()
-        for key_date in resources:
-            for key_place in resources[key_date]:
-                components = [0] * 10
-                mass = 0
-                self.data.components[key_date][key_place] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                place = list(resources[key_date][key_place])
-                rows = list(reversed(sorted(filter(lambda x: x[0] == key_place, self.data.table), key=lambda x: x[1])))
-                result = []
-                horizont = -1
-                for row in rows:
-                    if horizont != row[1]:
-                        result = [row[1], row[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                    index = self.data.ore_types.index(row[2])
-                    value = row[3]        # Обьем
-                    if place[index] <= 0:
-                        continue
-                    if place[index] < value:
-                        result[2] = place[index]       # Обьем
-                        k = result[2] / value          # Обьем
-                        place[index] = 0
-                    else:
-                        result[2] = value     # Обьем
-                        k = 1
-                        place[index] -= value
-                    result[3] = row[4] * k   # Масса
-                    for i in range(10):
-                        result[4+i] = row[i+6] * (k)
-                    self.data.plan[key_date][key_place].append(tuple(result))
-                    for i, component in enumerate(result[4:]):
-                        components[i] += component * row[4] 
-                    mass += row[4] * k
-                for i, component in enumerate(components):
-                    self.data.components[key_date][key_place][i] = component / mass if mass != 0 else 0
 
     def log(self, i, text):
         self.output[i] = text

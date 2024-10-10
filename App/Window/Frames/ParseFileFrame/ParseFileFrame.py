@@ -6,35 +6,14 @@ import Core.Core as Core
 import Core.Components as Data
 import os
 
-from Window.Frames.ParseFileFrame.Constants import COLUMNS, COLUMNS_SIZES
+from Window.Frames.ParseFileFrame.Constants import *
 
-TABLE_HEIGHT = 10
-MAX_WIDTH = 1920
-FORMAT_FUNCS = {
-    0: lambda x: x,
-    1: lambda x: x,
-    2: lambda x: x,
-    3: lambda x: ' '.join([''.join(reversed(str(int(x))))[i:i+3] for i in range(0, len(str(int(x))), 3)])[::-1],
-    4: lambda x: ' '.join([''.join(reversed(str(int(x))))[i:i+3] for i in range(0, len(str(int(x))), 3)])[::-1],
-    5: lambda x: f'{x:.2f}',
-    6: lambda x: f'{x:.3f}',
-    7: lambda x: f'{x:.3f}',
-    8: lambda x: f'{x:.3f}',
-    9: lambda x: f'{x:.3f}',
-    10: lambda x: f'{x:.3f}',
-    11: lambda x: f'{x:.3f}',
-    12: lambda x: f'{x:.3f}',
-    13: lambda x: f'{x:.3f}',
-    14: lambda x: f'{x:.3f}',
-    15: lambda x: f'{x:.3f}',
-    16: lambda x: f'{x:.3f}'
-}
+
 
 class ParseFileFrame(tk.Frame):
     def __init__(self, core, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.core : Core = core
-        self.data : Data = self.core.data
         self.label_name_space = tk.Label(self, text='Название месторождения*', justify=tk.CENTER)
         self.entry_name_space = tk.Entry(self, justify=tk.CENTER, font='bold')
         self.frame_third_line = tk.Frame(self)
@@ -90,18 +69,21 @@ class ParseFileFrame(tk.Frame):
         self.text_components.grid(          column=3, row=10, columnspan=1, sticky=tk.NSEW)
         self.scrollbar_components.grid(     column=4, row=10, sticky=tk.NSEW)
         self.button_load_data.grid(         column=1, row=12, columnspan=4, sticky=tk.NSEW)
-        
+
+    def init(self):
+        pass
+            
     def __init_treeview(self):
-        columns = COLUMNS + tuple(self.data.components_types)
+        columns = COLUMNS + tuple(self.core['component_types'])
         self.treeview_table['columns'] = columns
         for i in range(len(columns)):
-            width = COLUMNS_SIZES[i] if i < len(COLUMNS_SIZES) else 700 // len(self.data.components_types)
+            width = COLUMNS_SIZES[i] if i < len(COLUMNS_SIZES) else 700 // len(self.core['component_types'])
             self.treeview_table.heading(i, text=columns[i])
             self.treeview_table.column(i, width=width)
         self.treeview_table.column(1, anchor=tk.E)
         for i in range(3, 5):
             self.treeview_table.column(i, anchor=tk.E)
-        for i in range(5, 6+len(self.data.components_types)):
+        for i in range(5, 6+len(self.core['component_types'])):
             self.treeview_table.column(i, anchor=tk.CENTER)
         self.treeview_table.bind('<Double-Button-1>', self.__treeview_handler)
 
@@ -123,7 +105,6 @@ class ParseFileFrame(tk.Frame):
             return
         self.core.clean()
         parser_handler = self.core.parser(filename)
-        self.data = self.core.data
         while (status := next(parser_handler)) != 100:
             self.progressbar_status['value'] = status
             if status == -1:
@@ -148,11 +129,11 @@ class ParseFileFrame(tk.Frame):
 
     def __update_states(self):
         self.entry_name_space.delete(0, tk.END)
-        self.entry_name_space.insert(0, self.data.name_space)
+        self.entry_name_space.insert(0, self.core['namespace'])
         self.text_places['state'] = tk.NORMAL
         self.text_places.delete(0.0, tk.END)
-        for place in self.data.meta['places']:
-            data = self.data.meta['places'][place]
+        for place in self.core['meta']['places']:
+            data = self.core['meta']['places'][place]
             self.text_places.insert(tk.END, f'{place}:\n')
             self.text_places.insert(tk.END, f'  Макс. гор.: {data["MAX_H"]}\n')
             self.text_places.insert(tk.END, f'  Мин. гор.: {data["MIN_H"]}\n')
@@ -163,8 +144,8 @@ class ParseFileFrame(tk.Frame):
         self.text_places['state'] = tk.DISABLED
         self.text_ore_types['state'] = tk.NORMAL
         self.text_ore_types.delete(0.0, tk.END)
-        for ore in self.data.meta['ores']:
-            data = self.data.meta['ores'][ore]
+        for ore in self.core['meta']['ores']:
+            data = self.core['meta']['ores'][ore]
             self.text_ore_types.insert(tk.END, f'{ore}:\n')
             self.text_ore_types.insert(tk.END, f'  Обьем: {self.fast_format(data["V"])}\n')
             self.text_ore_types.insert(tk.END, f'  Масса: {self.fast_format(data["M"])}\n')
@@ -172,8 +153,8 @@ class ParseFileFrame(tk.Frame):
         self.text_ore_types['state'] = tk.DISABLED
         self.text_components['state'] = tk.NORMAL
         self.text_components.delete(0.0, tk.END)
-        for ore in self.data.meta['components']:
-            data = self.data.meta['components'][ore]
+        for ore in self.core['meta']['components']:
+            data = self.core['meta']['components'][ore]
             self.text_components.insert(tk.END, f'{ore}:\n')
             self.text_components.insert(tk.END, f'  Масса: {self.fast_format(data)}\n')
             self.text_places.insert(tk.END, f'\n')
@@ -211,10 +192,10 @@ class ParseFileFrame(tk.Frame):
 
     def _fill_table(self):
         self._clear_table()
-        width = 6 + len(self.data.components_types)
-        for i in range(len(self.data.table)):
-            self.progressbar_status['value'] = int(i * 100 / (len(self.data.table)))
-            self.treeview_table.insert("", index=i, iid=i, values=tuple([FORMAT_FUNCS[j](self.data.table[i][j]) for j in range(width)]))
+        width = 6 + len(self.core['component_types'])
+        for i in range(len(self.core['table'])):
+            self.progressbar_status['value'] = int(i * 100 / (len(self.core['table'])))
+            self.treeview_table.insert("", index=i, iid=i, values=tuple([FORMAT_FUNCS[j](self.core['table'][i][j]) for j in range(width)]))
             self.update()
         self.progressbar_status['value'] = 100
         self.update()
@@ -222,7 +203,7 @@ class ParseFileFrame(tk.Frame):
     def __treeview_handler(self, e):
         # check this function on windows
         treeview_index = int(self.treeview_table.focus())
-        table_values = self.data.table[treeview_index]
+        table_values = self.core['table'][treeview_index]
         self.button_save_file['state'] = tk.DISABLED
         self.button_load_file['state'] = tk.DISABLED
         self.button_load_data['state'] = tk.DISABLED
@@ -230,7 +211,7 @@ class ParseFileFrame(tk.Frame):
         add_root = tk.Tk()
         add_root.title('Ввод параметров')
         add_root.geometry('1280x75+200+200')
-        headers = COLUMNS + tuple(self.data.components_types)
+        headers = COLUMNS + tuple(self.core['component_types'])
         labels = []
         entrys = []
         for i, header in enumerate(headers):
@@ -255,12 +236,9 @@ class ParseFileFrame(tk.Frame):
                         result.append(float(entry.get()))
                 self.treeview_table.delete(treeview_index)
                 self.treeview_table.insert('', index=treeview_index, iid=treeview_index, values=tuple([FORMAT_FUNCS[j](value) for j, value in enumerate(result)]))
-                self.data.table[treeview_index] = tuple(result)
+                self.core['table'][treeview_index] = tuple(result)
             except: 
                 tkmb.showerror('Ошибка', 'Проверьте правильность ввода')
             finally:
                 add_root.destroy()
         ttk.Button(add_root, text='Подтвердить', command=confirm).grid(column=1, row=3, columnspan=len(headers), sticky=tk.NSEW)
-
-
-        

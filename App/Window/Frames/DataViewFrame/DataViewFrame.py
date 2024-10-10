@@ -21,11 +21,10 @@ class DataViewFrame(tk.Frame):
         self.button_load_plan = tk.Button(self, text='Загрузить план', justify=tk.CENTER, command=self.__load_plan)
         self.button_save_plan = tk.Button(self, text='Сохранить план', justify=tk.CENTER, command=self.__save_plan)
         
-        self.ore_types = []
         self.top_panel = tk.Frame(self)
         self.frame_input_parameters = InputParametersFrame(self.top_panel)
-        self.frame_parameters_ores = ParametersFrame(self.top_panel, headers=self.ore_types, variants=PARAMETERS_1, text="Руды/Вскрыша")
-        self.frame_parameters_components = ParametersFrame(self.top_panel, headers=self.core.data.components_types, variants=PARAMETERS_2, text="Единицы измерения")
+        self.frame_parameters_ores = ParametersFrame(self.top_panel, headers=self.core['ore_types'], variants=PARAMETERS_1, text="Руды/Вскрыша")
+        self.frame_parameters_components = ParametersFrame(self.top_panel, headers=self.core['component_types'], variants=PARAMETERS_2, text="Единицы измерения")
         
         self.label_calendar = tk.Label(self, text=CALENDAR_HEADER, justify=tk.CENTER, relief=tk.RAISED, width=10)
         self.label_calendar_choosen = tk.Label(self, text='', justify=tk.CENTER, relief=tk.RIDGE, width=10)
@@ -36,11 +35,11 @@ class DataViewFrame(tk.Frame):
         self.listbox_places = tk.Listbox(self, listvariable=(), selectmode=tk.SINGLE, height=TABLE_HEIGHT, justify=tk.CENTER, width=10)
         self.listbox_places['state'] = tk.DISABLED
 
-        self.treeview_horizonts = ttk.Treeview(self, columns=self.core.data.components_types, displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
+        self.treeview_horizonts = ttk.Treeview(self, columns=self.core['component_types'], displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
         self._initialization_treeview()
 
-        self.amount_of_component = AmountFrame(self, headers=self.core.data.components_types, readonly=True, text='Средневзвешенное по плану')
-        self.amount_of_ore = AmountFrame(self, headers=self.ore_types, text='Сумма руды по плану')
+        self.amount_of_component = AmountFrame(self, headers=self.core['component_types'], readonly=True, text='Средневзвешенное по плану')
+        self.amount_of_ore = AmountFrame(self, headers=self.core['ore_types'], text='Сумма руды по плану')
         #self.amount_of_horizonts = AmountFrame(self, headers=('Участок 1',), text='Максимум горизонтов')
         self.button_recalculate = tk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
         self.variable_fix_place = tk.BooleanVar()
@@ -112,19 +111,10 @@ class DataViewFrame(tk.Frame):
             self._treeview_append(item)
 
     def _recalculate_values(self):
-        date = self.label_calendar_choosen['text']
-        place = self.label_places_choosen['text']
-        values = self.amount_of_ore.get_values()
-        self.core.set(resources={date: {place: values}})
-        self.core.recalculate()
-        plan = self.core[date][place]
-        self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
-        for item in plan:
-            self._treeview_append(item)
-        self.amount_of_component.set_values(self.core.data.components[date][place])
+        pass
 
     def _initialization_treeview(self):
-        components = self.core.data.components_types
+        components = self.core['component_types']
         self.treeview_horizonts['columns'] = CARREER_HORIZONTS + tuple(components)
         for i, (text, width) in enumerate(CARREER_HORIZONTS):
             self.treeview_horizonts.heading(i, text=text)
@@ -138,8 +128,7 @@ class DataViewFrame(tk.Frame):
         self.treeview_horizonts.insert("", tk.END, values=item)
 
     def init(self):
-        career_name, places, ore_types = self.core.data_get_meta()
-        components = self.core.data.components_types
+        career_name, places, ore_types, components = self.core.get_headers()
 
         self.entry_title.delete(0, tk.END)
         self.entry_title.insert(0, career_name)
@@ -212,7 +201,7 @@ class DataViewFrame(tk.Frame):
         self.set_frame_state(tk.NORMAL)
 
     def __parameters_to_core(self):
-        self.core.data.name_space = self.entry_title.get()
+        self.core.data['namespace'] = self.entry_title.get()
         parameters = self.frame_input_parameters.get_parameters()
         parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
         parameters['measure_count'] = self.frame_parameters_components.get_all()
@@ -225,6 +214,7 @@ class DataViewFrame(tk.Frame):
         self.frame_parameters_components.set_all(params['measure_count'])
 
     def __plan_from_core(self):
+        self.listbox_calendar.delete(0, tk.END)
         for date in self.core.data.plan:
             self.listbox_calendar.insert(tk.END, date)
 

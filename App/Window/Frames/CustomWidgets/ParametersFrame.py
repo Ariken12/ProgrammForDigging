@@ -18,8 +18,6 @@ class ParametersFrame(ttk.Labelframe):
         self._pack()
 
     def _pack(self):
-        for i in range(1, len(self.label_headers)+2):
-            self.columnconfigure(i, weight=1)
         for i, label in enumerate(self.label_variants):
             label.grid(column=1, row=1+i, sticky=tk.NSEW)
         for i, label in enumerate(self.label_headers):
@@ -53,21 +51,30 @@ class ParametersFrame(ttk.Labelframe):
         self._pack()
 
     def __init_label_variants(self):
+        for label in self.label_variants:
+            label.destroy()
         self.label_variants.clear()
         for text in self.variants:
             self.label_variants.append(tk.Label(self, text=text, justify=tk.RIGHT))
 
     def __init_label_headers(self):
+        for label in self.label_headers:
+            label.destroy()
         self.label_headers.clear()
         for text in self.headers:
             self.label_headers.append(tk.Label(self, text=text, justify=tk.CENTER))
 
     def __init_variables(self):
+        for var in self.variables:
+            del var
         self.variables.clear()
         for component in self.headers:
             self.variables.append(tk.IntVar())
         
     def __init_radiobuttons(self):
+        for radiobuttons in self.radiobuttons:
+            for radiobutton in radiobuttons:
+                radiobutton.destroy() 
         self.radiobuttons.clear()
         for i, header in enumerate(self.headers):
             self.radiobuttons.append([])

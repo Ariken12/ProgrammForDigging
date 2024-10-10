@@ -20,6 +20,7 @@ class Serializer:
     def __load(self):
         with open(self.filename, 'rb') as file:
             temp = pickle.load(file)
+            self.core.clean()
             for param in tuple(temp.__dict__):
                 self.core.__dict__[param] = copy.deepcopy(temp.__dict__[param])
             del temp
