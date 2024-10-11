@@ -77,9 +77,10 @@ class Parser:
         self.core['meta']['places'][self.namespace]['MAX_H'] = max(self.core['meta']['places'][self.namespace]['MAX_H'], horizont)
         if self.last_horizont is None:
             self.last_horizont = horizont
+            self.last_namespace = self.namespace
             return None
         d_horizont = self.last_horizont - horizont
-        if self.last_namespace != self.namespace or d_horizont == MAX_H - horizont:
+        if self.last_namespace != self.namespace:
             self.last_horizont = horizont
             self.last_namespace = self.namespace
             return None
