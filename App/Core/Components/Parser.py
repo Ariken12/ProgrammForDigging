@@ -1,7 +1,6 @@
 import openpyxl as pyxl
 import Core.Core as Core
 
-MAX_H = float('inf')
 
 class Parser:
     def __init__(self, core: Core):
@@ -21,7 +20,7 @@ class Parser:
                 components.append(str(cell))
         self.core['component_types'] = tuple(components)
         array = []
-        self.last_horizont = MAX_H
+        self.last_horizont = None
         self.last_namespace = ''
         for row in range(2, worksheet.max_row+2):
             array.clear()
@@ -66,8 +65,8 @@ class Parser:
             self.core['meta']['places'][nameplace] = {
                 'V': 0, 
                 'M': 0,
-                'MIN_H': MAX_H,
-                'MAX_H': -1,
+                'MIN_H': float('inf'),
+                'MAX_H': float('-inf'),
                 'STEP_H': -1
             }
         self.core['meta']['places'][nameplace]['V'] += self.core['table'][-1][3]
@@ -76,6 +75,9 @@ class Parser:
     def check_horizont(self, horizont):
         self.core['meta']['places'][self.namespace]['MIN_H'] = min(self.core['meta']['places'][self.namespace]['MIN_H'], horizont)
         self.core['meta']['places'][self.namespace]['MAX_H'] = max(self.core['meta']['places'][self.namespace]['MAX_H'], horizont)
+        if self.last_horizont is None:
+            self.last_horizont = horizont
+            return None
         d_horizont = self.last_horizont - horizont
         if self.last_namespace != self.namespace or d_horizont == MAX_H - horizont:
             self.last_horizont = horizont
