@@ -247,7 +247,6 @@ class Compute:
                         self.log_components[new_date, place] = components
                         # ------------------------------
                     i_layer += 1
-        print('test: ', summ_of_mass)
 
 
     def update_remains(self):

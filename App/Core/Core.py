@@ -3,6 +3,7 @@ from Core.Components.Parser import Parser
 from Core.Components.Dumper import Dumper
 from Core.Components.Serializer import Serializer
 
+
 class Core:
     def __init__(self):
         self.clean()
@@ -13,6 +14,7 @@ class Core:
         self.parser = Parser(self)
         self.dumper = Dumper(self)
         self.serializer = Serializer(self)
+        self.start = self.compute.main_calculate
 
     def set(self, *data, **kwdata):
         for key in kwdata:
@@ -48,10 +50,3 @@ class Core:
     
     def recalculate(self):
         self.compute.calculate_places()
-
-    def start(self):
-        process = self.compute.main_calculate()
-        while (output := next(process)) != None:
-            yield output
-        while True:
-            yield None

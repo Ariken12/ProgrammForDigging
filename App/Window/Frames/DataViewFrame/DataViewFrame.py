@@ -98,7 +98,7 @@ class DataViewFrame(tk.Frame):
         date = self.label_calendar_choosen['text']
         place = cursor
         self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
-        plan = self.core[date][place]
+        plan = self.core['plan'][date][place]
         for item in plan:
             item = list(item)
             for i, value in enumerate(item):
@@ -170,6 +170,7 @@ class DataViewFrame(tk.Frame):
                 self.set_log(output)
                 self.update()
             self.__plan_from_core()
+            self.update()
         finally:
             self.set_frame_state(tk.NORMAL)
 
@@ -205,17 +206,17 @@ class DataViewFrame(tk.Frame):
         parameters = self.frame_input_parameters.get_parameters()
         parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
         parameters['measure_count'] = self.frame_parameters_components.get_all()
-        self.core.set(parameters=parameters)
+        self.core['parameters'] = parameters
 
     def __parameters_from_core(self):
-        params = self.core.data.parameters
+        params = self.core['parameters']
         self.frame_input_parameters.set_parameters(**params)
         self.frame_parameters_ores.set_all(params['usefull_ores'])
         self.frame_parameters_components.set_all(params['measure_count'])
 
     def __plan_from_core(self):
         self.listbox_calendar.delete(0, tk.END)
-        for date in self.core.data.plan:
+        for date in self.core['plan']:
             self.listbox_calendar.insert(tk.END, date)
 
     def set_frame_state(self, state):

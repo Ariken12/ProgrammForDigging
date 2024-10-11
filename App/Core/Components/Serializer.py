@@ -15,12 +15,10 @@ class Serializer:
 
     def __save(self):
         with open(self.filename, 'wb') as file:
-            pickle.dump(self.core, file, 5)
+            pickle.dump(self.core.data, file, 5)
 
     def __load(self):
         with open(self.filename, 'rb') as file:
-            temp = pickle.load(file)
+            data = pickle.load(file)
             self.core.clean()
-            for param in tuple(temp.__dict__):
-                self.core.__dict__[param] = copy.deepcopy(temp.__dict__[param])
-            del temp
+            self.core.data = data

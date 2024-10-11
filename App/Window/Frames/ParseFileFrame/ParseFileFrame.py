@@ -71,7 +71,9 @@ class ParseFileFrame(tk.Frame):
         self.button_load_data.grid(         column=1, row=12, columnspan=4, sticky=tk.NSEW)
 
     def init(self):
-        pass
+        self.__update_states()
+        self.__init_treeview()
+        self._fill_table()
             
     def __init_treeview(self):
         columns = COLUMNS + tuple(self.core['component_types'])
@@ -115,12 +117,12 @@ class ParseFileFrame(tk.Frame):
             self.__update_states()
             self.update()
         self.progressbar_status['value'] = 100
-        self.__update_states()
         self.update()
         self.button_load_data['state'] = tk.NORMAL
         self.button_load_file['state'] = tk.NORMAL
         self.button_save_file['state'] = tk.NORMAL
         self.button_open_file['state'] = tk.NORMAL
+        self.__update_states()
         self.__init_treeview()
         self._fill_table()
 
@@ -181,10 +183,6 @@ class ParseFileFrame(tk.Frame):
 
     def _start_(self):
         self.master._start_calculation()
-
-    def _change_precision(self, precision):
-        self.precision = int(precision)
-        self.precision_label.config(text=str(10 ** self.precision))
 
     def _clear_table(self):
         for i in self.treeview_table.get_children():

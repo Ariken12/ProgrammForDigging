@@ -145,10 +145,10 @@ class InputParametersFrame(ttk.LabelFrame):
         self.__spinbox_acceleration_handler()
         for i, entry in enumerate(self.entrys_acceleration):
             entry.delete(0, tk.END)
-            entry.insert(0, kwargs['acceleration'][i])
+            entry.insert(0, int(kwargs['acceleration'][i]))
         for i, entry in enumerate(self.entrys_max_depth):
             entry.delete(0, tk.END)
-            entry.insert(0, kwargs['max_dh'][self.labels_max_depth[i]['text']])
+            entry.insert(0, int(kwargs['max_dh'][self.labels_max_depth[i]['text']]))
         for i, entry in enumerate(self.entrys_components):
             entry.delete(0, tk.END)
             entry.insert(0, kwargs['components_lim'][i])
