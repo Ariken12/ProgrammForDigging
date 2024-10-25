@@ -38,8 +38,8 @@ class ParseFileFrame(tk.Frame):
         self.scrollbar_components = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.text_components = tk.Text(self, yscrollcommand=self.scrollbar_components.set, width=30, height=TABLE_HEIGHT, wrap=tk.WORD, state=tk.DISABLED)
         self.scrollbar_components['command'] = self.text_components.yview
-        self.button_load_data = tk.Button(self, text='Начать работу с данными', command=(self._start_))
-        self.button_load_data['state'] = tk.DISABLED
+        # self.button_load_data = tk.Button(self, text='Начать работу с данными', command=(self._start_))
+        # self.button_load_data['state'] = tk.DISABLED
 
         self._pack()
     
@@ -68,7 +68,7 @@ class ParseFileFrame(tk.Frame):
         self.label_components.grid(         column=3, row=9,  columnspan=1, sticky=tk.NSEW)
         self.text_components.grid(          column=3, row=10, columnspan=1, sticky=tk.NSEW)
         self.scrollbar_components.grid(     column=4, row=10, sticky=tk.NSEW)
-        self.button_load_data.grid(         column=1, row=12, columnspan=4, sticky=tk.NSEW)
+        # self.button_load_data.grid(         column=1, row=12, columnspan=4, sticky=tk.NSEW)
 
     def init(self):
         self.__update_states()
@@ -99,7 +99,7 @@ class ParseFileFrame(tk.Frame):
     def _load_file_command(self):
         self.button_save_file['state'] = tk.DISABLED
         self.button_load_file['state'] = tk.DISABLED
-        self.button_load_data['state'] = tk.DISABLED
+        # self.button_load_data['state'] = tk.DISABLED
         self.button_open_file['state'] = tk.DISABLED
         filename = self.entry_open_file.get()
         if not os.path.exists(filename):
@@ -118,7 +118,7 @@ class ParseFileFrame(tk.Frame):
             self.update()
         self.progressbar_status['value'] = 100
         self.update()
-        self.button_load_data['state'] = tk.NORMAL
+        # self.button_load_data['state'] = tk.NORMAL
         self.button_load_file['state'] = tk.NORMAL
         self.button_save_file['state'] = tk.NORMAL
         self.button_open_file['state'] = tk.NORMAL
@@ -155,9 +155,9 @@ class ParseFileFrame(tk.Frame):
         self.text_ore_types['state'] = tk.DISABLED
         self.text_components['state'] = tk.NORMAL
         self.text_components.delete(0.0, tk.END)
-        for ore in self.core['meta']['components']:
-            data = self.core['meta']['components'][ore]
-            self.text_components.insert(tk.END, f'{ore}:\n')
+        for component in self.core['meta']['components']:
+            data = self.core['meta']['components'][component]
+            self.text_components.insert(tk.END, f'{component.replace('г/т', 'г').replace('%', '10г')}:\n')
             self.text_components.insert(tk.END, f'  Масса: {self.fast_format(data)}\n')
             self.text_places.insert(tk.END, f'\n')
         self.text_components['state'] = tk.DISABLED
@@ -166,7 +166,7 @@ class ParseFileFrame(tk.Frame):
         filename = fd.asksaveasfilename(defaultextension='.xlsx', filetypes=[('Excel documents','*.xlsx')])
         self.button_save_file['state'] = tk.DISABLED
         self.button_load_file['state'] = tk.DISABLED
-        self.button_load_data['state'] = tk.DISABLED
+        # self.button_load_data['state'] = tk.DISABLED
         self.button_open_file['state'] = tk.DISABLED
         dumper_handler = self.core.dumper(filename)
         while (status := next(dumper_handler)) != 100:
@@ -176,7 +176,7 @@ class ParseFileFrame(tk.Frame):
                 return
             self.__update_states()
             self.update()
-        self.button_load_data['state'] = tk.NORMAL
+        # self.button_load_data['state'] = tk.NORMAL
         self.button_load_file['state'] = tk.NORMAL
         self.button_save_file['state'] = tk.NORMAL
         self.button_open_file['state'] = tk.NORMAL
@@ -204,7 +204,7 @@ class ParseFileFrame(tk.Frame):
         table_values = self.core['table'][treeview_index]
         self.button_save_file['state'] = tk.DISABLED
         self.button_load_file['state'] = tk.DISABLED
-        self.button_load_data['state'] = tk.DISABLED
+        # self.button_load_data['state'] = tk.DISABLED
         self.button_open_file['state'] = tk.DISABLED
         add_root = tk.Tk()
         add_root.title('Ввод параметров')
@@ -221,7 +221,7 @@ class ParseFileFrame(tk.Frame):
             entrys[i].insert(0, str(table_values[i]))
 
         def confirm():
-            self.button_load_data['state'] = tk.NORMAL
+            # self.button_load_data['state'] = tk.NORMAL
             self.button_load_file['state'] = tk.NORMAL
             self.button_save_file['state'] = tk.NORMAL
             self.button_open_file['state'] = tk.NORMAL

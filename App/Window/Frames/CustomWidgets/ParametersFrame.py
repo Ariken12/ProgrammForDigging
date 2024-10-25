@@ -50,6 +50,11 @@ class ParametersFrame(ttk.Labelframe):
         self.__init_radiobuttons()
         self._pack()
 
+    def edit_headers(self, headers):
+        self.headers = headers
+        for i, label in enumerate(self.label_headers):
+            label['text'] = headers[i]
+
     def __init_label_variants(self):
         for label in self.label_variants:
             label.destroy()

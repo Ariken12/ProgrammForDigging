@@ -117,6 +117,10 @@ class InputParametersFrame(ttk.LabelFrame):
             self.entrys_components[-1].insert(0, '0')
         self._pack()
 
+    def edit_components(self, components):
+        for i, label in enumerate(self.labels_components):
+            label['text'] = components[i]
+
     def get_parameters(self):
         output = {}
         output['acceleration'] = []

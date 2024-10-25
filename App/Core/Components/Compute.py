@@ -266,22 +266,26 @@ class Compute:
                     continue
                 self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
                 self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
-                self.remains[place][horizont]['SUMM']['COMPONENTS'] = self.remains[place][horizont]['SUMM']['COMPONENTS']
                 for ore in self.remains[place][horizont]['ORE']:
                     self.remains[place][horizont]['ORE'][ore]['V'] -= self.remains[place][horizont]['ORE'][ore]['V'] * k
                     self.remains[place][horizont]['ORE'][ore]['M'] -= self.remains[place][horizont]['ORE'][ore]['M'] * k
-                    self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] = self.remains[place][horizont]['ORE'][ore]['COMPONENTS']
                 i_layer += 1
 
     def write_output(self):
         try:
-            plt.plot(range(1, len(self.log_k)+1), list(self.log_k))
+            plt.plot(range(1, len(self.log_k)+1), list(self.log_k), label='Коэффициент добычи')
+            plt.xlabel('Количество лет в отработке')
+            plt.ylabel(f'Коэффициент добычи, {self.core['parameters']['k_func'][::-1]}')
             plt.savefig('Коэффициент добычи.png', dpi=300)
             plt.clf()
-            plt.plot(range(1, len(self.log_stripping_ratio)+1), list(self.log_stripping_ratio))
+            plt.plot(range(1, len(self.log_stripping_ratio)+1), list(self.log_stripping_ratio), label='Коэффициент вскрыши')
+            plt.xlabel('Количество лет в отработке')
+            plt.ylabel(f'Коэффициент вскрыши, {self.core['parameters']['k_func']}')
             plt.savefig('Коэффициент вскрыши.png', dpi=300)
             plt.clf()
-            plt.plot(range(1, len(self.log_speed)+1), self.log_speed)
+            plt.plot(range(1, len(self.log_speed)+1), self.log_speed, label='Общая скорость добычи')
+            plt.xlabel('Количество лет в отработке')
+            plt.ylabel(f'Общая скорость добычи, т')
             plt.savefig('Общая скорость добычи.png', dpi=300)
             plt.clf()
             # places = {}
@@ -369,6 +373,15 @@ class Compute:
             'Месяц': 12, 
             'Неделя': 53
         }[self.core['parameters']['step_date']]
+        self.components_changes = [1] * len(self.core['component_types'])
+        for i, val in enumerate(self.core['parameters']['measure_count']):
+            if ('г/т' in self.core['component_types'][i].lower() and self.core['parameters']['measure_count'][val] == 0):
+                self.components_changes[i] = 10
+                self.core['component_types'] = tuple([component.replace('г/т', '%') if j == i else component for j, component in enumerate(self.core['component_types'])])
+            if ('%' in self.core['component_types'][i].lower() and self.core['parameters']['measure_count'][val] == 1):
+                self.components_changes[i] = 0.1
+                self.core['component_types'] = tuple([component.replace('%', 'г/т') if j == i else component for j, component in enumerate(self.core['component_types'])])
+        self.components_changes = tuple(self.core['parameters']['measure_count'])
         self.log_variants.clear()
         self.log_k.clear()
         self.log_speed.clear()

@@ -6,13 +6,14 @@ from datetime import datetime as dt
 import numpy as np
 
 
-from Window.Frames.DataViewFrame.Constants import *
+from Window.Frames.ComputeFrame.Constants import *
 from Window.Frames.CustomWidgets.ParametersFrame import ParametersFrame
 from Window.Frames.CustomWidgets.AmountFrame import AmountFrame
 from Window.Frames.CustomWidgets.InputParametersFrame import InputParametersFrame
+from Window.Frames.CustomWidgets.FlawingOrderFrame import FlawingOrderFrame
 
 
-class DataViewFrame(tk.Frame):
+class ComputeFrame(tk.Frame):
     def __init__(self, core, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.core = core
@@ -25,7 +26,8 @@ class DataViewFrame(tk.Frame):
         self.frame_input_parameters = InputParametersFrame(self.top_panel)
         self.frame_parameters_ores = ParametersFrame(self.top_panel, headers=self.core['ore_types'], variants=PARAMETERS_1, text="Руды/Вскрыша")
         self.frame_parameters_components = ParametersFrame(self.top_panel, headers=self.core['component_types'], variants=PARAMETERS_2, text="Единицы измерения")
-        
+        self.frame_places_order = FlawingOrderFrame(self.top_panel)
+
         self.label_calendar = tk.Label(self, text=CALENDAR_HEADER, justify=tk.CENTER, relief=tk.RAISED, width=10)
         self.label_calendar_choosen = tk.Label(self, text='', justify=tk.CENTER, relief=tk.RIDGE, width=10)
         self.listbox_calendar = tk.Listbox(self, listvariable=(), selectmode=tk.SINGLE, height=TABLE_HEIGHT, justify=tk.CENTER, width=10)
@@ -39,13 +41,14 @@ class DataViewFrame(tk.Frame):
         self._initialization_treeview()
 
         self.amount_of_component = AmountFrame(self, headers=self.core['component_types'], readonly=True, text='Средневзвешенное по плану')
-        self.amount_of_ore = AmountFrame(self, headers=self.core['ore_types'], text='Сумма руды по плану')
+        self.amount_of_ore = AmountFrame(self, headers=self.core['places'], text='Сумма руды по плану')
         #self.amount_of_horizonts = AmountFrame(self, headers=('Участок 1',), text='Максимум горизонтов')
-        self.button_recalculate = tk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
-        self.variable_fix_place = tk.BooleanVar()
-        self.checkbutton_fix_place = tk.Checkbutton(self, text='Зафиксировать участок', variable=self.variable_fix_place)
-        self.button_calculate = tk.Button(self, text='Рассчитать план', command=self.calculation_run)
+        self.button_recalculate = ttk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
         self.button_recalculate['state'] = tk.DISABLED
+        self.variable_fix_place = tk.BooleanVar()
+        self.checkbutton_fix_place = ttk.Checkbutton(self, text='Зафиксировать участок', variable=self.variable_fix_place, command=self.__fix_plan)
+        self.checkbutton_fix_place['state'] = tk.DISABLED
+        self.button_calculate = ttk.Button(self, text='Рассчитать план', command=self.calculation_run)
         self.text_log = tk.Text(self, height=5)
         self.text_log['state'] = 'disabled'
         self._bind()
@@ -64,6 +67,7 @@ class DataViewFrame(tk.Frame):
         self.frame_input_parameters.grid(           column=1, row=1, sticky=tk.NSEW)
         self.frame_parameters_ores.grid(            column=1, row=2, sticky=tk.NSEW)
         self.frame_parameters_components.grid(      column=1, row=3, sticky=tk.NSEW)
+        self.frame_places_order.grid(               column=1, row=4, sticky=tk.NSEW)
         
         self.label_title.grid(                      column=1, row=0, columnspan=3, sticky=tk.NSEW)
         self.entry_title.grid(                      column=1, row=1, columnspan=3, sticky=tk.NSEW)
@@ -93,22 +97,31 @@ class DataViewFrame(tk.Frame):
 
     def _listbox_place_handler(self, event):
         self.button_recalculate['state'] = tk.NORMAL
+        self.checkbutton_fix_place['state'] = tk.NORMAL
         cursor = self.listbox_places.selection_get()
         self.label_places_choosen['text'] = cursor
         date = self.label_calendar_choosen['text']
         place = cursor
         self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
         plan = self.core['plan'][date][place]
-        for item in plan:
-            item = list(item)
-            for i, value in enumerate(item):
+        summ_of_components = [0] * len(self.core['component_types'])
+        mass = 0
+        for row in plan:
+            row = list(row)
+            mass += row[3]
+            for i, density in enumerate(row[4:]):
+                summ_of_components[i] += row[3] * row[4+i]
+            for i, value in enumerate(row):
                 if 1 < i < 4:
-                    item[i] = int(value)
+                    row[i] = int(value)
                 elif i == 4:
-                    item[i] = round(value, 6)
+                    row[i] = round(value, 6)
                 elif i > 4:
-                    item[i] = round(value, 3)
-            self._treeview_append(item)
+                    row[i] = round(value, 3)        
+            self._treeview_append(row)
+        for i, component in enumerate(summ_of_components):
+            summ_of_components[i] = component / mass if mass != 0 else 0
+        self.amount_of_component.set_values(summ_of_components)
 
     def _recalculate_values(self):
         pass
@@ -128,23 +141,9 @@ class DataViewFrame(tk.Frame):
         self.treeview_horizonts.insert("", tk.END, values=item)
 
     def init(self):
-        career_name, places, ore_types, components = self.core.get_headers()
-
-        self.entry_title.delete(0, tk.END)
-        self.entry_title.insert(0, career_name)
-
-        self.amount_of_component.set_headers(components)
-        self.frame_parameters_components.set_headers(components)
-
-        self._initialization_treeview()
-
-        self.frame_parameters_ores.set_headers(ore_types)
-        self.amount_of_ore.set_headers(ore_types)
-        # self.amount_of_horizonts.set_headers(places)
-
-        self.frame_input_parameters.set_places(list(places))
-        self.frame_input_parameters.set_components(components)
-
+        self.__set_headers()
+        self.__parameters_from_core()
+        places = self.core['places']
         first_date = f'{dt.today().date()}'
         dates = {first_date: {}}
         for place in places:
@@ -162,6 +161,10 @@ class DataViewFrame(tk.Frame):
 
     def calculation_run(self):
         self.listbox_calendar.delete(0, tk.END)
+        self.button_recalculate['state'] = tk.DISABLED
+        self.checkbutton_fix_place['state'] = tk.DISABLED
+        self.label_calendar_choosen['text'] = ''
+        self.label_places_choosen['text'] = ''
         self.set_frame_state(tk.DISABLED)
         self.__parameters_to_core()
         try:
@@ -169,6 +172,10 @@ class DataViewFrame(tk.Frame):
             while (output := next(proc)) != None:
                 self.set_log(output)
                 self.update()
+            components = self.core['component_types']
+            self.frame_parameters_components.edit_headers(components)
+            self.amount_of_component.edit_headers(components)
+            self.frame_input_parameters.edit_components(components)
             self.__plan_from_core()
             self.update()
         finally:
@@ -206,6 +213,7 @@ class DataViewFrame(tk.Frame):
         parameters = self.frame_input_parameters.get_parameters()
         parameters['usefull_ores'] = self.frame_parameters_ores.get_all()
         parameters['measure_count'] = self.frame_parameters_components.get_all()
+        self.core['places'] = self.frame_places_order.get_order()
         self.core['parameters'] = parameters
 
     def __parameters_from_core(self):
@@ -218,6 +226,41 @@ class DataViewFrame(tk.Frame):
         self.listbox_calendar.delete(0, tk.END)
         for date in self.core['plan']:
             self.listbox_calendar.insert(tk.END, date)
+
+    def __fix_plan(self):
+        date = self.label_calendar_choosen['text']
+        place = self.label_places_choosen['text']
+        if self.variable_fix_place.get():
+            if date not in self.core['plan_modify']:
+                self.core['plan_modify'][date] = {}
+            if place not in self.core['plan_modify'][date]:
+                self.core['plan_modify'][date][place] = {}
+            amount_ores = self.amount_of_ore.get_values()
+            summ = 0
+            for i, place in enumerate(self.core['places']):
+                self.core['plan_modify'][date][place][place] = amount_ores[i]
+                summ += amount_ores[i]
+            self.core['plan_modify'][date][place]['SUMM'] = summ
+        else:
+            if date not in self.core['plan_modify']:
+                return
+            if place not in self.core['plan_modify'][date]:
+                return
+            self.core['plan_modify'][date].pop(place)
+    
+    def __set_headers(self):
+        career_name, places, ore_types, components = self.core.get_headers()
+        self.entry_title.delete(0, tk.END)
+        self.entry_title.insert(0, career_name)
+        self.frame_parameters_components.set_headers(components)
+        self.frame_parameters_ores.set_headers(ore_types)
+        self._initialization_treeview()
+        self.amount_of_component.set_headers(components)
+        self.amount_of_ore.set_headers(places)
+        self.frame_input_parameters.set_places(list(places))
+        self.frame_input_parameters.set_components(components)
+        self.frame_places_order.set_objects(places)
+
 
     def set_frame_state(self, state):
         self.button_calculate['state'] = state

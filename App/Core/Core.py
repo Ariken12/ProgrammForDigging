@@ -36,8 +36,19 @@ class Core:
         self.data = {
             'table': [],
             'namespace': '',
-            'parameters': {},
+            'parameters': {
+                'acceleration': (),
+                'max_dh': (),
+                'components_lim': (),
+                'begin_date': (),
+                'step_date': (),
+                'k_func': (),
+                'max_k': (),
+                'usefull_ores': (), 
+                'measure_count': ()
+            },
             'plan': {},
+            'plan_modify': {},
             'meta': {
                 'places': {},
                 'ores': {},
