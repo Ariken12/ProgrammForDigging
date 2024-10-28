@@ -141,8 +141,6 @@ class ComputeFrame(tk.Frame):
         self.treeview_horizonts.insert("", tk.END, values=item)
 
     def init(self):
-        self.__set_headers()
-        self.__parameters_from_core()
         places = self.core['places']
         first_date = f'{dt.today().date()}'
         dates = {first_date: {}}
@@ -157,6 +155,8 @@ class ComputeFrame(tk.Frame):
         self.listbox_places['state'] = tk.DISABLED
         self.listbox_calendar.delete(0, tk.END)
         self.listbox_calendar.insert(tk.END, first_date)
+
+        self.__set_headers()
         self._pack()
 
     def calculation_run(self):
@@ -168,7 +168,7 @@ class ComputeFrame(tk.Frame):
         self.set_frame_state(tk.DISABLED)
         self.__parameters_to_core()
         try:
-            proc = self.core.start()
+            proc = self.core.compute()
             while (output := next(proc)) != None:
                 self.set_log(output)
                 self.update()

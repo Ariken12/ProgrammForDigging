@@ -126,6 +126,7 @@ class InputParametersFrame(ttk.LabelFrame):
         output['acceleration'] = []
         for entry in self.entrys_acceleration:
             output['acceleration'].append(float(entry.get()))
+        output['acceleration'] = tuple(output['acceleration'])
         output['max_dh'] = {}
         for i, entry in enumerate(self.entrys_max_depth):
             value = entry.get()
@@ -138,6 +139,7 @@ class InputParametersFrame(ttk.LabelFrame):
             if value == '':
                 value = 0
             output['components_lim'].append(float(value))
+        output['components_lim'] = tuple(output['components_lim'])
         output['begin_date'] = self.entry_started_date.get()
         output['step_date'] = self.combobox_precision_date.get()
         output['k_func'] = self.combobox_precision_value.get()
@@ -152,10 +154,10 @@ class InputParametersFrame(ttk.LabelFrame):
             entry.insert(0, int(kwargs['acceleration'][i]))
         for i, entry in enumerate(self.entrys_max_depth):
             entry.delete(0, tk.END)
-            entry.insert(0, int(kwargs['max_dh'][self.labels_max_depth[i]['text']]))
+            entry.insert(0, int(kwargs['max_dh'][self.labels_max_depth[i]['text']]) if self.labels_max_depth[i]['text'] in kwargs['max_dh'] else 0)
         for i, entry in enumerate(self.entrys_components):
             entry.delete(0, tk.END)
-            entry.insert(0, kwargs['components_lim'][i])
+            entry.insert(0, kwargs['components_lim'][i] if i < len(kwargs['components_lim']) else 0)
         self.entry_started_date.delete(0, tk.END)
         self.entry_started_date.insert(0, kwargs['begin_date'])
         self.combobox_precision_date.set(kwargs['step_date'])

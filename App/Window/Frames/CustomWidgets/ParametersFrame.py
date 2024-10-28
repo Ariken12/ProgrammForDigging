@@ -41,7 +41,7 @@ class ParametersFrame(ttk.Labelframe):
     
     def set_all(self, vals):
         for i, var in enumerate(self.variables):
-            var.set(vals[self.label_headers[i]['text']])
+            var.set(vals[self.label_headers[i]['text']] if self.label_headers[i]['text'] in vals else 0)
     
     def set_headers(self, headers):
         self.headers = headers
