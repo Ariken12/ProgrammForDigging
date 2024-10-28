@@ -1,1 +1,3 @@
-print((1, 2, 3).index(2))
+import numpy as np
+
+print(np.array((1, 2, 3)) * np.array((1, 2, 3)))

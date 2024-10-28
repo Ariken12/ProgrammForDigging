@@ -1,4 +1,4 @@
-from Core.Components.Compute import Compute
+from Core.Components.Compute.Compute import Compute
 from Core.Components.Parser import Parser
 from Core.Components.Dumper import Dumper
 from Core.Components.Serializer import Serializer
@@ -14,7 +14,6 @@ class Core:
         self.parser = Parser(self)
         self.dumper = Dumper(self)
         self.serializer = Serializer(self)
-        self.start = self.compute.main_calculate
 
     def set(self, *data, **kwdata):
         for key in kwdata:
@@ -38,14 +37,14 @@ class Core:
             'namespace': '',
             'parameters': {
                 'acceleration': (),
-                'max_dh': (),
+                'max_dh': {},
                 'components_lim': (),
                 'begin_date': (),
                 'step_date': (),
                 'k_func': (),
                 'max_k': (),
-                'usefull_ores': (), 
-                'measure_count': ()
+                'usefull_ores': {}, 
+                'measure_count': {}
             },
             'plan': {},
             'plan_modify': {},
