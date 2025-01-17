@@ -36,10 +36,10 @@ class RegularCompute(BaseComputeYear):
         if summ >= self.speed:
             return
         lim_layer = self.core['parameters']['max_dh'][place]
-        for i, layer in enumerate(reversed(sorted(list(self.remains[place]))), 1):
+        for i, layer in enumerate(reversed(sorted(list(self.core['remains'][place]))), 1):
             if i > lim_layer:
                 break
-            next_m = self.remains[place][layer]['SUMM']['M']
+            next_m = self.core['remains'][place][layer]['SUMM']['M']
             if summ + next_m > self.speed:
                 i = i + (self.speed - summ) / next_m - 1
                 summ = self.speed
@@ -61,12 +61,12 @@ class RegularCompute(BaseComputeYear):
                 place = self.place_names[i_place]
                 i_layer = 0
                 while i_layer < num_of_layers:
-                    horizont = sorted(list(self.remains[place]))[-1-i_layer]
+                    horizont = sorted(list(self.core['remains'][place]))[-1-i_layer]
                     for ore in self.core['parameters']['usefull_ores']:
                         usefull_flag = self.core['parameters']['usefull_ores'][ore]
-                        if ore in self.remains[place][horizont]['ORE']:
-                            ore_v = self.remains[place][horizont]['ORE'][ore]['V']
-                            ore_m = self.remains[place][horizont]['ORE'][ore]['M']
+                        if ore in self.core['remains'][place][horizont]['ORE']:
+                            ore_v = self.core['remains'][place][horizont]['ORE'][ore]['V']
+                            ore_m = self.core['remains'][place][horizont]['ORE'][ore]['M']
                         else:
                             ore_v = 0
                             ore_m = 0
@@ -122,10 +122,10 @@ class RegularCompute(BaseComputeYear):
             place = self.place_names[i_place]
             summ = 0
             iter_mass = 0
-            horizonts = list(reversed(sorted(list(self.remains[place]))))
-            layers_by_time = [self.remains[place][horizonts[i]]['SUMM']['M'] for i in range(int(num_of_layers))]
+            horizonts = list(reversed(sorted(list(self.core['remains'][place]))))
+            layers_by_time = [self.core['remains'][place][horizonts[i]]['SUMM']['M'] for i in range(int(num_of_layers))]
             if num_of_layers % 1 > 0:
-                layers_by_time.append(self.remains[place][horizonts[int(num_of_layers)]]['SUMM']['M'] * (num_of_layers % 1))
+                layers_by_time.append(self.core['remains'][place][horizonts[int(num_of_layers)]]['SUMM']['M'] * (num_of_layers % 1))
             summ_of_mass = sum(layers_by_time)
             for i_date in range(1, self.date_scale+1):
                 new_date = str((dt.datetime.strptime(date_start, "%Y-%m-%d") + timedelta * i_date).date())
@@ -146,7 +146,7 @@ class RegularCompute(BaseComputeYear):
                 # ----------------------------
                 i_layer = 0
                 while iter_mass < summ-EPSILON:
-                    horizont = sorted(list(self.remains[place]))[-1-i_layer]
+                    horizont = sorted(list(self.core['remains'][place]))[-1-i_layer]
                     if i_layer >= len(layers_by_time):
                         i_layer -= 1
                     if layers_by_time[i_layer] < EPSILON:
@@ -154,23 +154,23 @@ class RegularCompute(BaseComputeYear):
                         i_layer += 1
                         continue
                     elif layers_by_time[i_layer] > (summ - iter_mass):
-                        k = (summ - iter_mass) / self.remains[place][horizont]['SUMM']['M']
+                        k = (summ - iter_mass) / self.core['remains'][place][horizont]['SUMM']['M']
                         layers_by_time[i_layer] -= summ - iter_mass
                         iter_mass = summ
                     elif layers_by_time[i_layer] <= (summ - iter_mass):
-                        k = layers_by_time[i_layer] / self.remains[place][horizont]['SUMM']['M']
+                        k = layers_by_time[i_layer] / self.core['remains'][place][horizont]['SUMM']['M']
                         iter_mass += layers_by_time[i_layer]
                         layers_by_time[i_layer] = 0
-                    for ore in self.remains[place][horizont]['ORE']:
-                        v = self.remains[place][horizont]['ORE'][ore]['V'] * k
-                        m = self.remains[place][horizont]['ORE'][ore]['M'] * k
-                        components = self.remains[place][horizont]['ORE'][ore]['COMPONENTS'] * self.components_changes
+                    for ore in self.core['remains'][place][horizont]['ORE']:
+                        v = self.core['remains'][place][horizont]['ORE'][ore]['V'] * k
+                        m = self.core['remains'][place][horizont]['ORE'][ore]['M'] * k
+                        components = self.core['remains'][place][horizont]['ORE'][ore]['COMPONENTS'] * self.components_changes
                         plan_record = [horizont, ore, v, m] + list(components)
                         self.core['plan'][new_date][place].append(tuple(plan_record))
                         # ----------logging-------------
                         if ore not in self.log_ores[new_date, place]:
                             self.log_ores[new_date, place][ore] = 0
-                        self.log_ores[new_date, place][ore] = self.remains[place][horizont]['ORE'][ore]['M']
+                        self.log_ores[new_date, place][ore] = self.core['remains'][place][horizont]['ORE'][ore]['M']
                         self.log_components[new_date, place] = components
                         # ------------------------------
                     i_layer += 1
@@ -182,17 +182,17 @@ class RegularCompute(BaseComputeYear):
             place = self.place_names[i_place]
             i_layer = 0
             while i_layer < num_of_layers:
-                if not self.remains[place]:
+                if not self.core['remains'][place]:
                     break
-                horizont = sorted(list(self.remains[place]))[-1]
+                horizont = sorted(list(self.core['remains'][place]))[-1]
                 k = num_of_layers - i_layer
                 if k >= 1:
-                    self.remains[place].pop(horizont)
+                    self.core['remains'][place].pop(horizont)
                     i_layer += 1
                     continue
-                self.remains[place][horizont]['SUMM']['V'] -= self.remains[place][horizont]['SUMM']['V'] * k
-                self.remains[place][horizont]['SUMM']['M'] -= self.remains[place][horizont]['SUMM']['M'] * k
-                for ore in self.remains[place][horizont]['ORE']:
-                    self.remains[place][horizont]['ORE'][ore]['V'] -= self.remains[place][horizont]['ORE'][ore]['V'] * k
-                    self.remains[place][horizont]['ORE'][ore]['M'] -= self.remains[place][horizont]['ORE'][ore]['M'] * k
+                self.core['remains'][place][horizont]['SUMM']['V'] -= self.core['remains'][place][horizont]['SUMM']['V'] * k
+                self.core['remains'][place][horizont]['SUMM']['M'] -= self.core['remains'][place][horizont]['SUMM']['M'] * k
+                for ore in self.core['remains'][place][horizont]['ORE']:
+                    self.core['remains'][place][horizont]['ORE'][ore]['V'] -= self.core['remains'][place][horizont]['ORE'][ore]['V'] * k
+                    self.core['remains'][place][horizont]['ORE'][ore]['M'] -= self.core['remains'][place][horizont]['ORE'][ore]['M'] * k
                 i_layer += 1

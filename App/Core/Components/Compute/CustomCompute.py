@@ -9,3 +9,5 @@ class CustomCompute(BaseComputeYear):
 
     def __call__(self):
         pass
+        self.__update_plan()
+        self.__update_remains()

@@ -38,25 +38,25 @@ class ComputeFrame(tk.Frame):
         self.listbox_places['state'] = tk.DISABLED
 
         self.treeview_horizonts = ttk.Treeview(self, columns=self.core['component_types'], displaycolumns='#all', show='headings', height=TABLE_HEIGHT)
-        self._initialization_treeview()
+        self.__initialization_treeview()
 
         self.amount_of_component = AmountFrame(self, headers=self.core['component_types'], readonly=True, text='Средневзвешенное по плану')
-        self.amount_of_ore = AmountFrame(self, headers=self.core['places'], text='Сумма руды по плану')
+        self.amount_of_ore = AmountFrame(self, headers=self.core['places'], text='Сумма горной массы по плану')
         #self.amount_of_horizonts = AmountFrame(self, headers=('Участок 1',), text='Максимум горизонтов')
-        self.button_recalculate = ttk.Button(self, text='Пересчитать участок', command=self._recalculate_values)
-        self.button_recalculate['state'] = tk.DISABLED
-        self.variable_fix_place = tk.BooleanVar()
-        self.checkbutton_fix_place = ttk.Checkbutton(self, text='Зафиксировать участок', variable=self.variable_fix_place, command=self.__fix_plan)
-        self.checkbutton_fix_place['state'] = tk.DISABLED
-        self.button_calculate = ttk.Button(self, text='Рассчитать план', command=self.calculation_run)
+        self.button_recalculate = ttk.Button(self, text='Рассчитать 1 период', command=self.__handler_calculate_one_period)
+        self.checkbutton_fix_place = ttk.Checkbutton(self, text='Зафиксировать количество руды', command=self.__handler_fix_plan)
+        self.button_calculate = ttk.Button(self, text='Рассчитать несколько периодов', command=self.__handler_calculate_few_periods)
+        self.spinbox_calculate = ttk.Spinbox(self, from_=0, to=1000, command=self.__handler_spinbox_changed)
+        self.button_clear_plan = ttk.Button(self, text='Начать рассчеты заново', command=self.__clear_plan)
         self.text_log = tk.Text(self, height=5)
         self.text_log['state'] = 'disabled'
         self._bind()
+        self.core
         self._pack()
 
     def _bind(self):
-        self.listbox_calendar.bind('<Double-Button-1>', self._listbox_date_handler)
-        self.listbox_places.bind('<Double-Button-1>', self._listbox_place_handler)
+        self.listbox_calendar.bind('<Double-Button-1>', self.__listbox_date_handler)
+        self.listbox_places.bind('<Double-Button-1>', self.__listbox_place_handler)
 
     def _pack(self):
         self.columnconfigure(3, weight=1)
@@ -84,20 +84,42 @@ class ComputeFrame(tk.Frame):
         self.amount_of_component.grid(              column=4, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
         self.amount_of_ore.grid(                    column=5, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
         #self.amount_of_horizonts.grid(              column=6, row=3, columnspan=1, rowspan=3, sticky=tk.NSEW)
-        self.button_recalculate.grid(               column=1, row=6, columnspan=5, sticky=tk.NSEW)
+        self.button_recalculate.grid(               column=1, row=6, columnspan=4, sticky=tk.NSEW)
         self.checkbutton_fix_place.grid(            column=5, row=6, columnspan=1, sticky=tk.NSEW)
-        self.button_calculate.grid(                 column=1, row=7, columnspan=5, sticky=tk.NSEW)
-        self.text_log.grid(                         column=1, row=8, columnspan=5, sticky=tk.NSEW)
+        self.button_calculate.grid(                 column=1, row=7, columnspan=4, sticky=tk.NSEW)
+        self.spinbox_calculate.grid(                column=5, row=7, columnspan=1, sticky=tk.NSEW)
+        self.button_clear_plan.grid(                column=1, row=8, columnspan=5, sticky=tk.NSEW)
+        self.text_log.grid(                         column=1, row=9, columnspan=5, sticky=tk.NSEW)
 
-    def _listbox_date_handler(self, event):
+    def init(self):
+        places = self.core['places']
+        first_date = f'{dt.today().date()}'
+        dates = {first_date: {}}
+        for place in places:
+            dates[first_date][place] = []
+        self.core.set(dates=dates)
+
+        self.listbox_places['state'] = tk.NORMAL
+        self.listbox_places.delete(0, tk.END)
+        for place in places:
+            self.listbox_places.insert(tk.END, place)
+        self.listbox_places['state'] = tk.DISABLED
+        self.listbox_calendar.delete(0, tk.END)
+        self.listbox_calendar.insert(tk.END, first_date)
+
+        self.__set_headers()
+        self.__parameters_from_core()
+        self._pack()
+
+    def __listbox_date_handler(self, event):
         cursor = self.listbox_calendar.selection_get()
         self.label_calendar_choosen['text'] = cursor
         self.listbox_places['state'] = tk.NORMAL
         self.treeview_horizonts.delete(*self.treeview_horizonts.get_children())
 
-    def _listbox_place_handler(self, event):
-        self.button_recalculate['state'] = tk.NORMAL
-        self.checkbutton_fix_place['state'] = tk.NORMAL
+    def __listbox_place_handler(self, event):
+        # self.button_recalculate['state'] = tk.NORMAL
+        # self.checkbutton_fix_place['state'] = tk.NORMAL
         cursor = self.listbox_places.selection_get()
         self.label_places_choosen['text'] = cursor
         date = self.label_calendar_choosen['text']
@@ -118,59 +140,26 @@ class ComputeFrame(tk.Frame):
                     row[i] = round(value, 6)
                 elif i > 4:
                     row[i] = round(value, 3)        
-            self._treeview_append(row)
+            self.__treeview_append(row)
         for i, component in enumerate(summ_of_components):
             summ_of_components[i] = component / mass if mass != 0 else 0
         self.amount_of_component.set_values(summ_of_components)
 
-    def _recalculate_values(self):
-        pass
+    def __handler_calculate_one_period(self):
+        self.__parameters_to_core()
+        self.__set_frame_state(tk.DISABLED)
+        if self.checkbutton_fix_place.instate(('active',)):
+            amount = self.amount_of_ore.get_values()
+            for i, place in enumerate(self.core['places']):
+                self.core['plan_modify'][place] = amount[i]
+            self.core.compute()
 
-    def _initialization_treeview(self):
-        components = self.core['component_types']
-        self.treeview_horizonts['columns'] = CARREER_HORIZONTS + tuple(components)
-        for i, (text, width) in enumerate(CARREER_HORIZONTS):
-            self.treeview_horizonts.heading(i, text=text)
-            self.treeview_horizonts.column(i, minwidth=width, width=width)
-        for i in range(len(components)):
-            width = 430 // len(components)
-            self.treeview_horizonts.heading(i+len(CARREER_HORIZONTS), text=components[i])
-            self.treeview_horizonts.column(i+len(CARREER_HORIZONTS), minwidth=width, width=width)
-
-    def _treeview_append(self, item):
-        self.treeview_horizonts.insert("", tk.END, values=item)
-
-    def init(self):
-        places = self.core['places']
-        first_date = f'{dt.today().date()}'
-        dates = {first_date: {}}
-        for place in places:
-            dates[first_date][place] = []
-        self.core.set(dates=dates)
-
-        self.listbox_places['state'] = tk.NORMAL
-        self.listbox_places.delete(0, tk.END)
-        for place in places:
-            self.listbox_places.insert(tk.END, place)
-        self.listbox_places['state'] = tk.DISABLED
-        self.listbox_calendar.delete(0, tk.END)
-        self.listbox_calendar.insert(tk.END, first_date)
-
-        self.__set_headers()
-        self._pack()
-
-    def calculation_run(self):
-        self.listbox_calendar.delete(0, tk.END)
-        self.button_recalculate['state'] = tk.DISABLED
-        self.checkbutton_fix_place['state'] = tk.DISABLED
-        self.label_calendar_choosen['text'] = ''
-        self.label_places_choosen['text'] = ''
-        self.set_frame_state(tk.DISABLED)
+    def __handler_calculate_few_periods(self):
         self.__parameters_to_core()
         try:
             proc = self.core.compute()
             while (output := next(proc)) != None:
-                self.set_log(output)
+                self.__set_log(output)
                 self.update()
             components = self.core['component_types']
             self.frame_parameters_components.edit_headers(components)
@@ -179,10 +168,14 @@ class ComputeFrame(tk.Frame):
             self.__plan_from_core()
             self.update()
         finally:
-            self.set_frame_state(tk.NORMAL)
+            self.__set_frame_state(tk.NORMAL)
+
+    def __clear_plan(self):
+        self.core.clear_plan()
+        self.init()
 
     def __load_plan(self):
-        self.set_frame_state(tk.DISABLED)
+        self.__set_frame_state(tk.DISABLED)
         try:
             filename = fd.askopenfilename(defaultextension='.pklcore', filetypes=[('Serialized Core','*.pklcore'),
                                                                                 ('All files', '*')])
@@ -191,22 +184,21 @@ class ComputeFrame(tk.Frame):
             self.__parameters_from_core()
             self.__plan_from_core()
         except Exception as e:
-            self.set_log(f'{type(e)}\n{e}')
+            self.__set_log(f'{type(e)}\n{e}')
             raise e
         finally:
-            self.set_frame_state(tk.NORMAL)
-
+            self.__set_frame_state(tk.NORMAL)
 
     def __save_plan(self):
-        self.set_frame_state(tk.DISABLED)
+        self.__set_frame_state(tk.DISABLED)
         try:
             filename = fd.asksaveasfilename(defaultextension='.pklcore', filetypes=[('Serialized Core','*.pklcore'),
                                                                                 ('All files', '*')])
             self.__parameters_to_core()
             self.core.serializer(mode='SAVE', name=filename)
         except Exception as e:
-            self.set_log(f'{type(e)}: {e}')
-        self.set_frame_state(tk.NORMAL)
+            self.__set_log(f'{type(e)}: {e}')
+        self.__set_frame_state(tk.NORMAL)
 
     def __parameters_to_core(self):
         self.core.data['namespace'] = self.entry_title.get()
@@ -226,27 +218,6 @@ class ComputeFrame(tk.Frame):
         self.listbox_calendar.delete(0, tk.END)
         for date in self.core['plan']:
             self.listbox_calendar.insert(tk.END, date)
-
-    def __fix_plan(self):
-        date = self.label_calendar_choosen['text']
-        place = self.label_places_choosen['text']
-        if self.variable_fix_place.get():
-            if date not in self.core['plan_modify']:
-                self.core['plan_modify'][date] = {}
-            if place not in self.core['plan_modify'][date]:
-                self.core['plan_modify'][date][place] = {}
-            amount_ores = self.amount_of_ore.get_values()
-            summ = 0
-            for i, place in enumerate(self.core['places']):
-                self.core['plan_modify'][date][place][place] = amount_ores[i]
-                summ += amount_ores[i]
-            self.core['plan_modify'][date][place]['SUMM'] = summ
-        else:
-            if date not in self.core['plan_modify']:
-                return
-            if place not in self.core['plan_modify'][date]:
-                return
-            self.core['plan_modify'][date].pop(place)
     
     def __set_headers(self):
         career_name, places, ore_types, components = self.core.get_headers()
@@ -254,7 +225,7 @@ class ComputeFrame(tk.Frame):
         self.entry_title.insert(0, career_name)
         self.frame_parameters_components.set_headers(components)
         self.frame_parameters_ores.set_headers(ore_types)
-        self._initialization_treeview()
+        self.__initialization_treeview()
         self.amount_of_component.set_headers(components)
         self.amount_of_ore.set_headers(places)
         self.frame_input_parameters.set_places(list(places))
@@ -262,13 +233,42 @@ class ComputeFrame(tk.Frame):
         self.frame_places_order.set_objects(places)
 
 
-    def set_frame_state(self, state):
+    def __set_frame_state(self, state):
+        self.spinbox_calculate['state'] = state
+        self.checkbutton_fix_place['state'] = state
+        self.button_recalculate['state'] = state
         self.button_calculate['state'] = state
         self.button_load_plan['state'] = state
         self.button_save_plan['state'] = state
 
-    def set_log(self, text):
+    def __set_log(self, text):
         self.text_log['state'] = tk.NORMAL
         self.text_log.delete(0.0, tk.END)
         self.text_log.insert(0.0, text)
         self.text_log['state'] = tk.DISABLED
+
+    def __initialization_treeview(self):
+        components = self.core['component_types']
+        self.treeview_horizonts['columns'] = CARREER_HORIZONTS + tuple(components)
+        for i, (text, width) in enumerate(CARREER_HORIZONTS):
+            self.treeview_horizonts.heading(i, text=text)
+            self.treeview_horizonts.column(i, minwidth=width, width=width)
+        for i in range(len(components)):
+            width = 430 // len(components)
+            self.treeview_horizonts.heading(i+len(CARREER_HORIZONTS), text=components[i])
+            self.treeview_horizonts.column(i+len(CARREER_HORIZONTS), minwidth=width, width=width)
+
+    def __treeview_append(self, item):
+        self.treeview_horizonts.insert("", tk.END, values=item)
+
+    def __start_calculation(self):
+        self.listbox_calendar.delete(0, tk.END)
+        # self.button_recalculate['state'] = tk.DISABLED
+        # self.checkbutton_fix_place['state'] = tk.DISABLED
+        self.label_calendar_choosen['text'] = ''
+        self.label_places_choosen['text'] = ''
+        self.__set_frame_state(tk.DISABLED)
+        self.__parameters_to_core()
+
+    def __end_calculation(self):
+        pass

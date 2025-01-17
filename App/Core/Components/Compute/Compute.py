@@ -12,7 +12,6 @@ import openpyxl as opx
 class Compute:
     def __init__(self, core):
         self.core : Core.Core = core
-        self.remains = {}
         self.place_names = None
         self.k_calculate = None
         self.stripping_ratio_calculate = None
@@ -29,6 +28,7 @@ class Compute:
         self.log_stripping_ratio = []
         self.speed = 0
         self.__regular_compute = RegularCompute(self)
+        self.__custom_compute = CustomCompute(self)
 
     @staticmethod
     def k_calculate(v_u, m_u, v_a, m_a):
@@ -55,7 +55,7 @@ class Compute:
         self.year = 0
         self.core['plan'] = {}
         self.core['plan'][self.core['parameters']['begin_date']] = {}
-        for place in self.remains:
+        for place in self.core['remains']:
             self.core['plan'][self.core['parameters']['begin_date']][place] = []
         self.__log(0, f'Год {self.year}')
         self.ok = True
@@ -64,6 +64,8 @@ class Compute:
             print(summ_of_remain)
             self.year += 1
             try:
+                if self.core['plan_modify']:
+                    self.__custom_compute()
                 self.__regular_compute()
             except Exception as e:
                 self.ok = False
@@ -140,7 +142,7 @@ class Compute:
         yield None 
     
     def __load_remains(self):
-        yield self.__log(4, 'Загрузка руд в вычислитель')
+        yield self.__log(4, 'Подготовка данных для обработки')
         for row in self.core['table']:
             place = row[0]
             horizont = row[1]
@@ -148,22 +150,22 @@ class Compute:
             v = row[3]
             m = row[4]
             components = np.array(row[6:16])
-            if place not in self.remains:
-                self.remains[place] = {}
-            if horizont not in self.remains[place]:
-                self.remains[place][horizont] = {
+            if place not in self.core['remains']:
+                self.core['remains'][place] = {}
+            if horizont not in self.core['remains'][place]:
+                self.core['remains'][place][horizont] = {
                     'SUMM': 
                         {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.core['component_types']),))}, 
                     'ORE':
                         {}}
-            if type_of_ore not in self.remains[place][horizont]['ORE']:
-                self.remains[place][horizont]['ORE'][type_of_ore] = {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.core['component_types']),))}
-            self.remains[place][horizont]['SUMM']['V'] += v
-            self.remains[place][horizont]['SUMM']['M'] += m
-            self.remains[place][horizont]['SUMM']['COMPONENTS'] += components
-            self.remains[place][horizont]['ORE'][type_of_ore]['V'] += v
-            self.remains[place][horizont]['ORE'][type_of_ore]['M'] += m
-            self.remains[place][horizont]['ORE'][type_of_ore]['COMPONENTS'] += components
+            if type_of_ore not in self.core['remains'][place][horizont]['ORE']:
+                self.core['remains'][place][horizont]['ORE'][type_of_ore] = {'V': 0, 'M': 0, 'COMPONENTS': np.zeros((len(self.core['component_types']),))}
+            self.core['remains'][place][horizont]['SUMM']['V'] += v
+            self.core['remains'][place][horizont]['SUMM']['M'] += m
+            self.core['remains'][place][horizont]['SUMM']['COMPONENTS'] += components
+            self.core['remains'][place][horizont]['ORE'][type_of_ore]['V'] += v
+            self.core['remains'][place][horizont]['ORE'][type_of_ore]['M'] += m
+            self.core['remains'][place][horizont]['ORE'][type_of_ore]['COMPONENTS'] += components
             yield self.__log(0, f'Загружена {type_of_ore} на {horizont} горизонте, на участке {place}')
         yield self.__log(4, 'Таблица руд загружена в вычислитель')
         yield None
@@ -230,7 +232,6 @@ class Compute:
                     components = list(data[4:])
                     output = [year, summ, k_useless, place, summ_of_place, horizont, ore_name, v_of_ore, m_of_ore] + components
                     ws.append(output)
-        
         try:
             wb.save('План горных работ.xlsx')
         except Exception as e:
@@ -239,9 +240,9 @@ class Compute:
 
     def __check_empty_carreer(self):
         M = 0
-        for place in self.remains:
-            for horizont in self.remains[place]:
-                M += self.remains[place][horizont]['SUMM']['M']
+        for place in self.core['remains']:
+            for horizont in self.core['remains'][place]:
+                M += self.core['remains'][place][horizont]['SUMM']['M']
         return M
 
     def __log(self, i, text):

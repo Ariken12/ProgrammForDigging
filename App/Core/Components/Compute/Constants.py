@@ -4,7 +4,7 @@ from typing import Any
 
 EPSILON = 10 ** -6
 
-__SHARED_VARS = ('remains',
+__SHARED_VARS = (
     'place_names',
     'k_calculate',
     'stripping_ratio_calculate',
@@ -19,7 +19,8 @@ __SHARED_VARS = ('remains',
     'log_components',
     'log_places',
     'log_stripping_ratio',
-    'speed')
+    'speed'
+    )
 
 def update_interface(method):
     def wrapper(self, *args, **kwargs):

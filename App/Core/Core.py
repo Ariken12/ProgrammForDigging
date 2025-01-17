@@ -31,6 +31,9 @@ class Core:
     def __setitem__(self, item, value):
         self.data[item] = value
 
+    def clear_plan(self):
+        self.data['plan'].clear()
+
     def clear(self):
         self.data = {
             'table': [],
@@ -55,7 +58,8 @@ class Core:
             },
             'ore_types': (),
             'component_types': (),
-            'places': ()
+            'places': (),
+            'remains': {}
         }
     
     def recalculate(self):
